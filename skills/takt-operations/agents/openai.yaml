@@ -1,0 +1,4 @@
+interface:
+  display_name: "TAKT Operations"
+  short_description: "TAKTの設定・実行・ログ解析・障害復旧を支援するガイド"
+  default_prompt: "Use $takt-operations to configure, run, and troubleshoot a TAKT workflow safely."

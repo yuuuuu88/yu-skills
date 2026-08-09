@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "implement.observability.otel",
+  "version": "1.0.0",
+  "phase": "implement",
+  "core": {
+    "name": "Provider-Neutral Observability",
+    "originator": "Nous independent synthesis",
+    "source_url": "https://opentelemetry.io/docs/concepts/semantic-conventions/",
+    "operational_rule": "本文や秘密を不用意にログへ出さず、診断に必要な識別子とhashを優先する。"
+  },
+  "capabilities": [
+    "implement.incremental",
+    "implement.observability"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 84,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "e707b0166c8e4830641991b562fb2e0bc07cf7e4c817cb568684f6ad778e92de",
+  "guidance_hash": "1db1f85b53b9f761e26bcc74ad8b4072166630be3b2fc040eb5ef7fe15daf6fb",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "independent-synthesis"
+  }
+}

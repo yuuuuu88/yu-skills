@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "review.accessibility.wcag",
+  "version": "1.0.0",
+  "phase": "review",
+  "core": {
+    "name": "Accessibility Review",
+    "originator": "Nous independent synthesis",
+    "source_url": "https://www.w3.org/TR/WCAG22/",
+    "operational_rule": "自動検査だけで合格にせず、代表的な利用者操作と支援技術を想定した手動証拠を残す。"
+  },
+  "capabilities": [
+    "review.accessibility",
+    "review.independence"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 93,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "d290bf49ea5e3bd12e8fce4b24b0af2a25f2fd4dd61c47b152d60f7f41f20ffa",
+  "guidance_hash": "1d9a07328c7ba363f7a60dde8d0d39600d44d3692914e56ccf98aeeb280988cc",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "independent-synthesis"
+  }
+}

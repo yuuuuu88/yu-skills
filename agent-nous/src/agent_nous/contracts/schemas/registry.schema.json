@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "registry.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "generated_at": {
+      "$ref": "common.schema.json#/$defs/timestamp"
+    },
+    "tasks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "task_id": {
+            "$ref": "common.schema.json#/$defs/task_id"
+          },
+          "title": {
+            "type": "string"
+          },
+          "lifecycle_status": {
+            "$ref": "common.schema.json#/$defs/lifecycle"
+          },
+          "phase": {
+            "$ref": "common.schema.json#/$defs/phase"
+          },
+          "cycle": {
+            "type": "integer"
+          },
+          "updated_at": {
+            "$ref": "common.schema.json#/$defs/timestamp"
+          }
+        },
+        "required": [
+          "task_id",
+          "title",
+          "lifecycle_status",
+          "phase",
+          "cycle",
+          "updated_at"
+        ]
+      }
+    }
+  },
+  "required": [
+    "schema_version",
+    "generated_at",
+    "tasks"
+  ]
+}

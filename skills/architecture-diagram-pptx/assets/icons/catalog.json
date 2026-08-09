@@ -1,0 +1,77 @@
+{
+  "version": 2,
+  "license": "Generic icons are collected from Lucide 1.30.0 (ISC); provider icons are curated from official AWS/Azure/Google Cloud packages with source and terms recorded in manifest.json and references/icon-sources.md.",
+  "icons": [
+    {
+      "id": "user",
+      "file": "generic/user.svg",
+      "meaning": "人・利用者"
+    },
+    {
+      "id": "internet",
+      "file": "generic/internet.svg",
+      "meaning": "インターネット・外部"
+    },
+    {
+      "id": "browser",
+      "file": "generic/browser.svg",
+      "meaning": "ブラウザ・クライアント"
+    },
+    {
+      "id": "api",
+      "file": "generic/api.svg",
+      "meaning": "API・入口"
+    },
+    {
+      "id": "app",
+      "file": "generic/app.svg",
+      "meaning": "アプリケーション・コンテナ"
+    },
+    {
+      "id": "server",
+      "file": "generic/server.svg",
+      "meaning": "サーバー・実行基盤"
+    },
+    {
+      "id": "database",
+      "file": "generic/database.svg",
+      "meaning": "データベース"
+    },
+    {
+      "id": "queue",
+      "file": "generic/queue.svg",
+      "meaning": "キュー・イベント"
+    },
+    {
+      "id": "firewall",
+      "file": "generic/firewall.svg",
+      "meaning": "ファイアウォール・境界"
+    },
+    {
+      "id": "network",
+      "file": "generic/network.svg",
+      "meaning": "ネットワーク・サブネット"
+    },
+    {
+      "id": "storage",
+      "file": "generic/storage.svg",
+      "meaning": "オブジェクトストレージ"
+    },
+    {
+      "id": "cloud",
+      "file": "generic/cloud.svg",
+      "meaning": "クラウド・外部サービス"
+    },
+    {
+      "id": "identity",
+      "file": "generic/identity.svg",
+      "meaning": "認証・ID"
+    },
+    {
+      "id": "router",
+      "file": "generic/router.svg",
+      "meaning": "ルーター・経路"
+    }
+  ],
+  "manifest": "manifest.json"
+}

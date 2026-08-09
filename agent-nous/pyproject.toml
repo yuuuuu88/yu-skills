@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agent-nous"
+version = "0.1.0"
+description = "Durable plan-implement-review orchestration runtime for the nous Codex Skill"
+requires-python = ">=3.11"
+dependencies = ["jsonschema>=4.10,<5", "cryptography>=41,<46"]
+
+[project.scripts]
+nous = "agent_nous.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+agent_nous = ["contracts/schemas/*.json", "eval/*.json", "subskills/builtin/*/manifest.json", "subskills/builtin/*/guidance.md"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

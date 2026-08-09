@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "knowledge.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "task_id": {
+      "$ref": "common.schema.json#/$defs/task_id"
+    },
+    "revision": {
+      "$ref": "common.schema.json#/$defs/revision"
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "source_id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "locator": {
+            "type": "string"
+          },
+          "source_type": {
+            "type": "string"
+          },
+          "retrieved_at": {
+            "$ref": "common.schema.json#/$defs/timestamp"
+          },
+          "content_hash": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "source_id",
+          "title",
+          "locator",
+          "source_type",
+          "retrieved_at",
+          "content_hash"
+        ]
+      }
+    },
+    "claims": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "claim_id": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "source_ids": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string"
+            }
+          },
+          "epistemic_status": {
+            "enum": [
+              "confirmed",
+              "probable",
+              "uncertain",
+              "disputed"
+            ]
+          },
+          "lifecycle_status": {
+            "enum": [
+              "active",
+              "stale",
+              "superseded",
+              "rejected"
+            ]
+          },
+          "checked_at": {
+            "$ref": "common.schema.json#/$defs/timestamp"
+          }
+        },
+        "required": [
+          "claim_id",
+          "text",
+          "source_ids",
+          "epistemic_status",
+          "lifecycle_status",
+          "checked_at"
+        ]
+      }
+    },
+    "updated_at": {
+      "$ref": "common.schema.json#/$defs/timestamp"
+    }
+  },
+  "required": [
+    "schema_version",
+    "task_id",
+    "revision",
+    "sources",
+    "claims",
+    "updated_at"
+  ]
+}

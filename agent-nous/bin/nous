@@ -1,0 +1,13 @@
+#!/usr/bin/env sh
+set -eu
+
+PROJECT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+PYTHON="$PROJECT_DIR/.venv/bin/python"
+
+if [ ! -x "$PYTHON" ]; then
+  printf '%s\n' "nous: project virtualenv is missing: $PROJECT_DIR/.venv" >&2
+  printf '%s\n' "Run: python3 -m venv --system-site-packages $PROJECT_DIR/.venv && $PROJECT_DIR/.venv/bin/pip install -e $PROJECT_DIR --no-build-isolation" >&2
+  exit 2
+fi
+
+exec "$PYTHON" -m agent_nous.cli "$@"

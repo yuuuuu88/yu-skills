@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "parallel-plan.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": 1},
+    "plan_id": {"type": "string", "minLength": 1},
+    "task_id": {"$ref": "common.schema.json#/$defs/task_id"},
+    "cycle": {"type": "integer", "minimum": 1},
+    "mode": {"enum": ["parallel", "sequential"]},
+    "rationale": {"type": "string", "minLength": 1},
+    "max_concurrency": {"type": "integer", "minimum": 1, "maximum": 3},
+    "max_depth": {"type": "integer", "minimum": 0, "maximum": 2},
+    "child_contract_refs": {"type": "array", "minItems": 1, "items": {"type": "object", "additionalProperties": false, "properties": {"loop_id": {"type": "string"}, "contract_ref": {"type": "string"}, "content_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"}}, "required": ["loop_id", "contract_ref", "content_hash"]}},
+    "integration_order": {"type": "array", "items": {"type": "string"}},
+    "integration_strategy": {"type": "string", "minLength": 1},
+    "integration_validation": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "knowledge_references": {"type": "array", "items": {"type": "object", "additionalProperties": false, "properties": {"record_type": {"enum": ["question", "source", "claim"]}, "record_id": {"type": "string", "minLength": 1}, "content_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"}}, "required": ["record_type", "record_id", "content_hash"]}},
+    "created_at": {"$ref": "common.schema.json#/$defs/timestamp"}
+  },
+  "required": ["schema_version", "plan_id", "task_id", "cycle", "mode", "rationale", "max_concurrency", "max_depth", "child_contract_refs", "integration_order", "integration_strategy", "integration_validation", "knowledge_references", "created_at"]
+}

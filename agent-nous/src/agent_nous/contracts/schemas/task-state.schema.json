@@ -1,0 +1,158 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "task-state.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "task_id": {
+      "$ref": "common.schema.json#/$defs/task_id"
+    },
+    "root_task_id": {"$ref": "common.schema.json#/$defs/task_id"},
+    "loop_id": {"type": "string", "minLength": 1},
+    "parent_loop_id": {"type": ["string", "null"]},
+    "revision": {
+      "$ref": "common.schema.json#/$defs/revision"
+    },
+    "lifecycle_status": {
+      "$ref": "common.schema.json#/$defs/lifecycle"
+    },
+    "execution_status": {
+      "$ref": "common.schema.json#/$defs/execution"
+    },
+    "phase": {
+      "$ref": "common.schema.json#/$defs/phase"
+    },
+    "cycle": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "phase_kind": {
+      "enum": ["standard", "integration"]
+    },
+    "visibility": {
+      "enum": ["visible", "archived"]
+    },
+    "last_checkpoint_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "waiting_question_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "active_lease": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "owner": {
+          "type": "string"
+        },
+        "token": {
+          "type": "string"
+        },
+        "expires_at": {
+          "$ref": "common.schema.json#/$defs/timestamp"
+        },
+        "run_id": {"type": "string", "minLength": 1}
+      },
+      "required": [
+        "owner",
+        "token",
+        "expires_at",
+        "run_id"
+      ]
+    },
+    "updated_at": {
+      "$ref": "common.schema.json#/$defs/timestamp"
+    },
+    "last_error": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "active_plan_ref": {"type": ["object", "null"]},
+    "active_parallelization_plan_ref": {"type": ["object", "null"]},
+    "active_implement_ref": {"type": ["object", "null"]},
+    "latest_review_result_ref": {"type": ["object", "null"]},
+    "latest_review_decision_ref": {"type": ["object", "null"]},
+    "blocking_reasons": {"type": "array", "items": {"type": "string"}},
+    "sync_status": {"enum": ["clean", "uncommitted", "push_pending", "conflicted", "unavailable"]},
+    "target_artifact_durability": {"enum": ["none", "dirty_worktree_only", "patch_exported", "local_commit", "remote_pushed", "external_backup"]}
+    ,"current_action": {"type": ["object", "null"]}
+    ,"active_contract_ref": {"type": ["object", "null"]}
+    ,"latest_checkpoint_ref": {"type": ["object", "null"]}
+    ,"pending_human_questions": {"type": "array", "items": {"type": "object"}}
+    ,"active_approval_refs": {"type": "array", "items": {"type": "object"}}
+    ,"pending_approval_request_refs": {"type": "array", "items": {"type": "object"}}
+    ,"active_secret_exception_refs": {"type": "array", "items": {"type": "object"}}
+    ,"child_loops": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "loop_id": {"type": "string", "minLength": 1},
+          "contract_ref": {"type": "string", "minLength": 1},
+          "content_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+          "status": {"enum": ["created", "ready", "running", "waiting_human", "integration_ready", "failed", "cancelled"]},
+          "dependencies": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+          "preferred_backend": {"enum": ["sequential", "read_only_worker", "worktree"]},
+          "worktree_ref": {"type": ["object", "null"]},
+          "result_ref": {"type": ["object", "null"]}
+        },
+        "required": ["loop_id", "contract_ref", "content_hash", "status", "dependencies", "preferred_backend", "worktree_ref", "result_ref"]
+      }
+    }
+    ,"run_id": {"type": ["string", "null"]}
+    ,"lease_expires_at": {"anyOf": [{"$ref": "common.schema.json#/$defs/timestamp"}, {"type": "null"}]}
+  },
+  "required": [
+    "schema_version",
+    "task_id",
+    "root_task_id",
+    "loop_id",
+    "parent_loop_id",
+    "revision",
+    "lifecycle_status",
+    "execution_status",
+    "phase",
+    "cycle",
+    "phase_kind",
+    "visibility",
+    "last_checkpoint_id",
+    "waiting_question_ids",
+    "active_lease",
+    "updated_at",
+    "last_error",
+    "active_plan_ref",
+    "active_parallelization_plan_ref",
+    "active_implement_ref",
+    "latest_review_result_ref",
+    "latest_review_decision_ref",
+    "blocking_reasons",
+    "sync_status",
+    "target_artifact_durability"
+    ,"current_action"
+    ,"active_contract_ref"
+    ,"latest_checkpoint_ref"
+    ,"pending_human_questions"
+    ,"active_approval_refs"
+    ,"pending_approval_request_refs"
+    ,"active_secret_exception_refs"
+    ,"child_loops"
+    ,"run_id"
+    ,"lease_expires_at"
+  ]
+}

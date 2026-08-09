@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "implement.migration.expand-contract",
+  "version": "1.0.0",
+  "phase": "implement",
+  "core": {
+    "name": "Expand-Contract Migration",
+    "originator": "Nous independent synthesis",
+    "source_url": "https://martinfowler.com/bliki/ParallelChange.html",
+    "operational_rule": "各段階で旧版・新版が共存でき、戻す手順とデータ整合性確認がある場合だけ移行を進める。"
+  },
+  "capabilities": [
+    "implement.migration",
+    "implement.incremental"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 91,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "7c8e6cfb35ed8313b00da64481b7273c9d93c545b9a9d3f523fce88764a4a793",
+  "guidance_hash": "132c99b1ad4506322eb56c682baed283cba1965e0700d0b0e8aca1856c107896",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "independent-synthesis"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "plan.accessibility.wcag",
+  "version": "1.0.0",
+  "phase": "plan",
+  "core": {
+    "name": "Accessible Acceptance Planning",
+    "originator": "Nous independent synthesis",
+    "source_url": "https://www.w3.org/TR/WCAG22/",
+    "operational_rule": "自動検査項目と手動確認項目を分け、利用者の代表的な操作経路を計画に含める。"
+  },
+  "capabilities": [
+    "plan.acceptance",
+    "plan.accessibility"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 86,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "77c2b427fbf091c20e3eb2c735868ebc2dbbbd7bc99d9a96a0cc2b86b958a920",
+  "guidance_hash": "1ff87734c2503a1be2826cc33d3a6e19977c639fb2ad39e15358b6c8c6add603",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "independent-synthesis"
+  }
+}

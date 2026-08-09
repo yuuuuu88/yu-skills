@@ -1,0 +1,43 @@
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+.coverage.*
+.hypothesis/
+.mypy_cache/
+.pytype/
+.ruff_cache/
+dist/
+build/
+*.egg-info/
+eval-runs/
+
+# Local nous configuration and runtime state.  The runtime may create these
+# at the repository root when NOUS_HOME points here; they are never release
+# artifacts.  Share the template under examples/ instead.
+/.nous/
+/tasks/
+/requests/
+/runtime/
+/sandboxes/
+/agent-runs/
+.nous-eval-owner-*.key
+
+# Local environment files and private material.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.csr
+
+# OS/editor/tool noise.
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~

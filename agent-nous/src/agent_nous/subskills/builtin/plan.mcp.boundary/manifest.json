@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "plan.mcp.boundary",
+  "version": "1.0.0",
+  "phase": "plan",
+  "core": {
+    "name": "MCP Tool Boundary Plan",
+    "originator": "Nous independent synthesis",
+    "source_url": "https://modelcontextprotocol.io/specification/2025-11-25/server/tools",
+    "operational_rule": "tool annotationや説明文を安全性の証明にせず、親エンジンのpolicyで再評価する。"
+  },
+  "capabilities": [
+    "plan.acceptance",
+    "plan.tool-boundary"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 88,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "8cf1d1816ec543566e6ee6812d997e2b61b23b32c8a80fccee76939eb128d1de",
+  "guidance_hash": "f537fb7d3e3102373fe62142e457e587d735eadcbf7bc95d5e5c2175439f8ba4",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "independent-synthesis"
+  }
+}

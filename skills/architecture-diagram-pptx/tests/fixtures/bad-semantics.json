@@ -1,0 +1,20 @@
+{
+  "title": "矢印意味の検知",
+  "purpose": "データフローと依存関係の線種・向きが契約に従うことを確認する",
+  "diagram_type": "dependency",
+  "audience": "テスト担当者",
+  "expect": "fail",
+  "failure_kind": "semantics",
+  "canvas": {"width": 13.333, "height": 7.5},
+  "layout": {"direction": "left-to-right", "grid": 0.25, "safe_area": {"x": 0.5, "y": 1.25, "w": 12.3, "h": 5.25}},
+  "nodes": [
+    {"id": "consumer", "label": "利用側", "kind": "application", "icon": "app", "position": {"x": 2.0, "y": 3.0, "w": 1.5, "h": 1.0}},
+    {"id": "supplier", "label": "依存先", "kind": "service", "icon": "server", "position": {"x": 6.0, "y": 3.0, "w": 1.5, "h": 1.0}}
+  ],
+  "edges": [
+    {"id": "wrong-style", "from": "consumer", "to": "supplier", "label": "依存先を利用", "relation": "dependency", "line_style": "solid"},
+    {"id": "missing-relation", "from": "supplier", "to": "consumer", "label": "戻り値", "style": "solid"}
+  ],
+  "legend_relations": ["dependency"],
+  "metadata": {"version": "0.3.0", "updated_at": "2026-08-09", "author": "fixture", "assets": "none"}
+}

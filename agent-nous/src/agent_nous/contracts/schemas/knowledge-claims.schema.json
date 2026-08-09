@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "knowledge-claims.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": 1},
+    "task_id": {"$ref": "common.schema.json#/$defs/task_id"},
+    "loop_id": {"type": "string", "minLength": 1},
+    "revision": {"$ref": "common.schema.json#/$defs/revision"},
+    "transaction_id": {"type": "string", "pattern": "^tx-[A-Za-z0-9._-]+$"},
+    "claims": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "claim_id": {"type": "string", "minLength": 1},
+          "claim": {"type": "string", "minLength": 1},
+          "kind": {"enum": ["fact", "requirement", "decision", "inference", "hypothesis"]},
+          "epistemic_status": {"enum": ["verified", "inferred", "hypothesis", "disputed"]},
+          "lifecycle_status": {"enum": ["active", "stale", "superseded"]},
+          "scope": {"type": "object"},
+          "as_of": {"type": ["string", "null"]},
+          "supports": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+          "contradicts": {"type": "array", "items": {"type": "string"}},
+          "derived_from": {"type": "array", "items": {"type": "string"}},
+          "confidence": {"enum": ["high", "medium", "low"]},
+          "owner": {"enum": ["human", "plan", "implement", "review", "subskill"]},
+          "revalidate_when": {"type": ["string", "null"]},
+          "notes": {"type": "string"},
+          "record_revision": {"type": "integer", "minimum": 1},
+          "supersedes": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+          "content_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+        },
+        "required": ["claim_id", "claim", "kind", "epistemic_status", "lifecycle_status", "scope", "as_of", "supports", "contradicts", "derived_from", "confidence", "owner", "revalidate_when", "notes", "record_revision", "supersedes", "content_hash"]
+      }
+    },
+    "updated_at": {"$ref": "common.schema.json#/$defs/timestamp"}
+  },
+  "required": ["schema_version", "task_id", "loop_id", "revision", "transaction_id", "claims", "updated_at"]
+}

@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "implement.modules.parnas",
+  "version": "1.0.0",
+  "phase": "implement",
+  "core": {
+    "name": "Information Hiding",
+    "originator": "David L. Parnas",
+    "source_url": "https://dl.acm.org/doi/10.1145/361598.361623",
+    "operational_rule": "Decompose around likely-to-change design decisions and hide each behind a stable interface."
+  },
+  "capabilities": [
+    "implement.modularity",
+    "architecture.boundaries"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 60,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "e3e03c6d8664a69007217716de0579608d026b8e02715f0036cd287e09d3c78a",
+  "guidance_hash": "76799ebe690339cb9671fb3acb421ffc37ddfb97a2be48a54dee28a876678587",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "curated-guidance"
+  }
+}

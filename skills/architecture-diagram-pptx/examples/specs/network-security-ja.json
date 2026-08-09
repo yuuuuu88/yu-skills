@@ -1,0 +1,325 @@
+{
+  "title": "ネットワーク／セキュリティ構成図",
+  "purpose": "利用者から業務API・社内DBまでの主経路と、認証・監視の補助経路を示す",
+  "diagram_type": "network",
+  "audience": "インフラ・セキュリティ担当者",
+  "canvas": {
+    "width": 13.333,
+    "height": 7.5
+  },
+  "layout": {
+    "direction": "left-to-right",
+    "grid": 0.25,
+    "safe_area": {
+      "x": 0.5,
+      "y": 1.25,
+      "w": 12.3,
+      "h": 5.25
+    },
+    "allow_staggered": true
+  },
+  "boundaries": [
+    {
+      "id": "public",
+      "label": "public zone",
+      "node_ids": [
+        "portal"
+      ],
+      "position": {
+        "x": 2.25,
+        "y": 2,
+        "w": 1.75,
+        "h": 3.25
+      },
+      "style": {
+        "fill": "F8FAFC",
+        "line": "94A3B8",
+        "line_style": "dashed",
+        "transparency": 8
+      }
+    },
+    {
+      "id": "dmz",
+      "label": "DMZ",
+      "node_ids": [
+        "waf",
+        "gateway"
+      ],
+      "position": {
+        "x": 4.25,
+        "y": 2,
+        "w": 3.25,
+        "h": 3.25
+      },
+      "style": {
+        "fill": "FFF7ED",
+        "line": "FDBA74",
+        "line_style": "dashed",
+        "transparency": 8
+      }
+    },
+    {
+      "id": "private",
+      "label": "private zone",
+      "node_ids": [
+        "api",
+        "db",
+        "auth"
+      ],
+      "position": {
+        "x": 7.75,
+        "y": 2,
+        "w": 3.25,
+        "h": 3.5
+      },
+      "style": {
+        "fill": "EFF6FF",
+        "line": "93C5FD",
+        "line_style": "solid",
+        "transparency": 8
+      }
+    },
+    {
+      "id": "management",
+      "label": "management zone",
+      "node_ids": [
+        "monitor"
+      ],
+      "position": {
+        "x": 11.25,
+        "y": 2,
+        "w": 1.5,
+        "h": 3.5
+      },
+      "style": {
+        "fill": "F5F3FF",
+        "line": "C4B5FD",
+        "line_style": "dashed",
+        "transparency": 8
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "id": "user",
+      "label": "利用者",
+      "kind": "actor",
+      "icon": "user",
+      "role": "外部の利用者",
+      "position": {
+        "x": 0.75,
+        "y": 3,
+        "w": 1.25,
+        "h": 1
+      }
+    },
+    {
+      "id": "portal",
+      "label": "社内ポータル",
+      "kind": "application",
+      "icon": "browser",
+      "role": "ブラウザ画面",
+      "position": {
+        "x": 2.5,
+        "y": 3,
+        "w": 1.25,
+        "h": 1
+      }
+    },
+    {
+      "id": "waf",
+      "label": "WAF",
+      "kind": "security",
+      "icon": "firewall",
+      "role": "入口の防御",
+      "position": {
+        "x": 4.25,
+        "y": 3,
+        "w": 1.25,
+        "h": 1
+      }
+    },
+    {
+      "id": "gateway",
+      "label": "API Gateway",
+      "kind": "gateway",
+      "icon": "api",
+      "role": "経路制御",
+      "position": {
+        "x": 6.0,
+        "y": 3,
+        "w": 1.25,
+        "h": 1
+      }
+    },
+    {
+      "id": "api",
+      "label": "業務API",
+      "kind": "application",
+      "icon": "app",
+      "role": "業務処理",
+      "position": {
+        "x": 7.75,
+        "y": 3,
+        "w": 1.25,
+        "h": 1
+      }
+    },
+    {
+      "id": "db",
+      "label": "社内DB",
+      "kind": "data-store",
+      "icon": "database",
+      "role": "業務データ",
+      "position": {
+        "x": 9.5,
+        "y": 3,
+        "w": 1.25,
+        "h": 1
+      }
+    },
+    {
+      "id": "auth",
+      "label": "認証基盤",
+      "kind": "identity",
+      "icon": "network",
+      "role": "認証・認可",
+      "position": {
+        "x": 7.75,
+        "y": 4.5,
+        "w": 1.25,
+        "h": 1
+      }
+    },
+    {
+      "id": "monitor",
+      "label": "監視基盤",
+      "kind": "operations",
+      "icon": "server",
+      "role": "ログ・メトリクス",
+      "position": {
+        "x": 11.25,
+        "y": 4.5,
+        "w": 1.25,
+        "h": 1
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "user-portal",
+      "from": "user",
+      "to": "portal",
+      "label": "HTTPS",
+      "relation": "data_flow",
+      "line_style": "solid",
+      "from_anchor": "right",
+      "to_anchor": "left"
+    },
+    {
+      "id": "portal-waf",
+      "from": "portal",
+      "to": "waf",
+      "label": "HTTPS",
+      "relation": "data_flow",
+      "line_style": "solid",
+      "from_anchor": "right",
+      "to_anchor": "left"
+    },
+    {
+      "id": "waf-gateway",
+      "from": "waf",
+      "to": "gateway",
+      "label": "HTTPS",
+      "relation": "data_flow",
+      "line_style": "solid",
+      "from_anchor": "right",
+      "to_anchor": "left"
+    },
+    {
+      "id": "gateway-api",
+      "from": "gateway",
+      "to": "api",
+      "label": "API",
+      "relation": "data_flow",
+      "line_style": "solid",
+      "from_anchor": "right",
+      "to_anchor": "left"
+    },
+    {
+      "id": "api-db",
+      "from": "api",
+      "to": "db",
+      "label": "SQL",
+      "relation": "data_flow",
+      "line_style": "solid",
+      "from_anchor": "right",
+      "to_anchor": "left"
+    },
+    {
+      "id": "api-auth",
+      "from": "api",
+      "to": "auth",
+      "label": "認証基盤を利用",
+      "relation": "dependency",
+      "line_style": "dashed",
+      "from_anchor": "bottom",
+      "to_anchor": "top",
+      "label_box": {
+        "x": 7.7,
+        "y": 4.05,
+        "w": 1.55,
+        "h": 0.25
+      }
+    },
+    {
+      "id": "db-monitor",
+      "from": "db",
+      "to": "monitor",
+      "label": "ログ",
+      "relation": "monitoring",
+      "line_style": "dotted",
+      "from_anchor": "right",
+      "to_anchor": "left",
+      "route": [
+        {
+          "x": 11.4,
+          "y": 3.5
+        },
+        {
+          "x": 11.4,
+          "y": 5.0
+        }
+      ],
+      "label_position": {
+        "x": 10.25,
+        "y": 4.0,
+        "w": 1.75,
+        "h": 0.3
+      }
+    }
+  ],
+  "legend_relations": [
+    "data_flow",
+    "dependency",
+    "monitoring"
+  ],
+  "annotations": [
+    {
+      "id": "scope",
+      "text": "主経路は青実線、依存は灰破線、監視データは緑点線。詳細なサブネットやFWルールは別図で扱う。",
+      "position": {
+        "x": 0.6,
+        "y": 6.92,
+        "w": 11.8,
+        "h": 0.18
+      }
+    }
+  ],
+  "metadata": {
+    "version": "0.3.0",
+    "updated_at": "2026-08-09",
+    "author": "architecture-diagram-pptx example",
+    "assets": "neutral icon catalog; original SVG line icons"
+  }
+}

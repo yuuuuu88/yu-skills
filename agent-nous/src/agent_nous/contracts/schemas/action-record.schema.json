@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "action-record.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": 1},
+    "action": {"$ref": "action.schema.json"},
+    "status": {"enum": ["denied", "started", "completed", "failed", "reconciliation_required", "reconciled"]},
+    "actor": {"type": "string"},
+    "expected_state_revision": {"type": "integer", "minimum": 1},
+    "grant_id": {"type": ["string", "null"]},
+    "policy_outcome": {"enum": ["grant", "deny", "approval_required", "unsupported"]},
+    "gateway_outcome": {"enum": ["allow", "deny", "interrupt_for_approval", "unsupported"]},
+    "before_evidence_ref": {"type": ["string", "null"]},
+    "after_evidence_ref": {"type": ["string", "null"]},
+    "idempotency_key": {"type": ["string", "null"]},
+    "created_at": {"$ref": "common.schema.json#/$defs/timestamp"},
+    "updated_at": {"$ref": "common.schema.json#/$defs/timestamp"}
+  },
+  "required": ["schema_version", "action", "status", "actor", "expected_state_revision", "grant_id", "policy_outcome", "gateway_outcome", "before_evidence_ref", "after_evidence_ref", "idempotency_key", "created_at", "updated_at"]
+}

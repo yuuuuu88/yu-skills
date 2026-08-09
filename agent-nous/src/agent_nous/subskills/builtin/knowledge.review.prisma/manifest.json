@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "knowledge.review.prisma",
+  "version": "1.0.0",
+  "phase": "knowledge",
+  "core": {
+    "name": "PRISMA 2020",
+    "originator": "Matthew Page et al.",
+    "source_url": "https://www.prisma-statement.org/prisma-2020-statement",
+    "operational_rule": "Record discovery, deduplication, exclusions, reasons, and final source set when screening many sources."
+  },
+  "capabilities": [
+    "knowledge.systematic-review",
+    "knowledge.audit-trail"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 70,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "9276a0380db2c40cdbb9efab3c70fbc4847db31f3449f5212eb5c724b35e6f1d",
+  "guidance_hash": "5ad23342f5f4c8ec80372ef47815699b951e2b008ea80e616a38421418d0aef7",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "curated-guidance"
+  }
+}

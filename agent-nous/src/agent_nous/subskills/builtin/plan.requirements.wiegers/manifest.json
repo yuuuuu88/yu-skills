@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "plan.requirements.wiegers",
+  "version": "1.0.0",
+  "phase": "plan",
+  "core": {
+    "name": "Software Requirements",
+    "originator": "Karl Wiegers and Joy Beatty",
+    "source_url": "https://www.processimpact.com/pubs.html",
+    "operational_rule": "Separate business, user, functional, quality requirements, and constraints; link each to source and acceptance evidence."
+  },
+  "capabilities": [
+    "plan.requirements",
+    "plan.acceptance"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 100,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "412ee36b73c1bf92e177db60b01fa458ebcd476dc5685ec4610dd96578e07ce0",
+  "guidance_hash": "682c219a5198f3c5ea08e07260b890ddb37fd08054e4198ecff75ee4fa66337b",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "curated-guidance"
+  }
+}

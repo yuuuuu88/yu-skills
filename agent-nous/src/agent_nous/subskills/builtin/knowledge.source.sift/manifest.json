@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "knowledge.source.sift",
+  "version": "1.0.0",
+  "phase": "knowledge",
+  "core": {
+    "name": "SIFT",
+    "originator": "Mike Caulfield",
+    "source_url": "https://hapgood.us/2019/05/12/sift-and-a-check-please-preview/",
+    "operational_rule": "Stop, investigate the source, find better coverage, and trace claims to original context."
+  },
+  "capabilities": [
+    "knowledge.source.verify",
+    "knowledge.provenance"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 100,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "08292a507636e315ac9dfceb9080efdeca7bdc9655ce28781122857f641bc44c",
+  "guidance_hash": "99cdc05ad960b83cfb1fc2269c84e1346081d2bedfda0133732edcd4b75536b6",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "curated-guidance"
+  }
+}

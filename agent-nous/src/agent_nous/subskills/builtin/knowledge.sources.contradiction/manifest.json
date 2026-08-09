@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "knowledge.sources.contradiction",
+  "version": "1.0.0",
+  "phase": "knowledge",
+  "core": {
+    "name": "Contradiction Search",
+    "originator": "Nous independent synthesis",
+    "source_url": "https://www.cochranelibrary.com/about/about-cochrane-reviews",
+    "operational_rule": "一致した情報だけで確信を上げず、競合が解消された条件と未解決の不確実性を出力する。"
+  },
+  "capabilities": [
+    "knowledge.source.verify",
+    "knowledge.corroborate"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 95,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "b6c6ac8d56fcab5eece0e4850c0593f1f2f135e0145fbc7017957a7f6f663b73",
+  "guidance_hash": "c4c51846c9877c367c12cb63628efa92ad70f47b8188edfada71f0fc628c9732",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "independent-synthesis"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "selection-record-v1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": 1},
+    "selection_id": {"type": "string"},
+    "task_id": {"$ref": "common.schema.json#/$defs/task_id"},
+    "phase": {"enum": ["knowledge", "plan", "implement", "review"]},
+    "requested_capabilities": {"type": "array", "items": {"type": "string"}},
+    "selected": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "string"},
+          "version": {"type": "string"},
+          "content_hash": {"type": "string"},
+          "role": {"enum": ["primary", "advisor", "validator"]},
+          "score": {"type": "integer"}
+        },
+        "required": ["id", "version", "content_hash", "role", "score"],
+        "additionalProperties": false
+      }
+    },
+    "fallback_used": {"type": "boolean"},
+    "created_at": {"$ref": "common.schema.json#/$defs/timestamp"}
+  },
+  "required": ["schema_version", "selection_id", "task_id", "phase", "requested_capabilities", "selected", "fallback_used", "created_at"]
+}

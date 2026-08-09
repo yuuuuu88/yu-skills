@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "knowledge.evidence.grade",
+  "version": "1.0.0",
+  "phase": "knowledge",
+  "core": {
+    "name": "GRADE certainty",
+    "originator": "Gordon Guyatt and GRADE Working Group",
+    "source_url": "https://www.gradeworkinggroup.org/",
+    "operational_rule": "State confidence and downgrade reasons for bias, inconsistency, indirectness, imprecision, or publication bias."
+  },
+  "capabilities": [
+    "knowledge.certainty",
+    "knowledge.conflict"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 60,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "fd3af6271b4f916e39eba97ad5031c0d82592cffc142646b581e111d17d2f352",
+  "guidance_hash": "8e22c4afbfd0b31411ecd4c5731ee9c662f26b898772048981d11727cfd65af0",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "curated-guidance"
+  }
+}

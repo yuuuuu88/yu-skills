@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "approval.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": 1},
+    "approval_id": {"type": "string", "minLength": 1},
+    "approval_mode": {"enum": ["exact_action", "bounded_standing"]},
+    "task_id": {"$ref": "common.schema.json#/$defs/task_id"},
+    "status": {"enum": ["requested", "active", "denied", "revoked", "expired", "exhausted"]},
+    "requested_action_descriptor_ref": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "action_id": {"type": "string", "minLength": 1},
+        "action_digest": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+      },
+      "required": ["path", "action_id", "action_digest"]
+    },
+    "granted_by": {"type": ["string", "null"]},
+    "granted_at": {"anyOf": [{"$ref": "common.schema.json#/$defs/timestamp"}, {"type": "null"}]},
+    "granted_answer_ref": {"type": ["string", "null"]},
+    "expires_at": {"$ref": "common.schema.json#/$defs/timestamp"},
+    "revoked_at": {"anyOf": [{"$ref": "common.schema.json#/$defs/timestamp"}, {"type": "null"}]},
+    "revoke_reason": {"type": ["string", "null"]},
+    "scope": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "task_id": {"$ref": "common.schema.json#/$defs/task_id"},
+        "loop_ids": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "repository_identities": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "environments": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "normalized_targets": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "allowed_action_types": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "excluded_action_types": {"type": "array", "items": {"type": "string", "minLength": 1}}
+      },
+      "required": ["task_id", "loop_ids", "repository_identities", "environments", "normalized_targets", "allowed_action_types", "excluded_action_types"]
+    },
+    "max_count": {"type": "integer", "minimum": 1},
+    "consumed_count": {"type": "integer", "minimum": 0},
+    "approved_plan_ref": {"type": ["string", "null"]},
+    "approved_plan_content_hash": {"type": ["string", "null"]},
+    "approved_action_digests": {"type": "array", "minItems": 1, "items": {"type": "string", "pattern": "^[a-f0-9]{64}$"}},
+    "expected_effect": {"type": ["string", "null"]},
+    "paid_action_bound": {"type": ["object", "null"]},
+    "action_constraints": {"type": ["object", "null"]},
+    "created_from_question_id": {"type": ["string", "null"]},
+    "created_at": {"$ref": "common.schema.json#/$defs/timestamp"}
+  },
+  "required": ["schema_version", "approval_id", "approval_mode", "task_id", "status", "requested_action_descriptor_ref", "granted_by", "granted_at", "granted_answer_ref", "expires_at", "revoked_at", "revoke_reason", "scope", "max_count", "consumed_count", "approved_plan_ref", "approved_plan_content_hash", "approved_action_digests", "expected_effect", "paid_action_bound", "action_constraints", "created_from_question_id", "created_at"],
+  "allOf": [
+    {"if": {"properties": {"approval_mode": {"const": "exact_action"}}}, "then": {"properties": {"approved_plan_ref": {"type": ["string", "null"]}, "action_constraints": {"type": "null"}}}}
+  ]
+}

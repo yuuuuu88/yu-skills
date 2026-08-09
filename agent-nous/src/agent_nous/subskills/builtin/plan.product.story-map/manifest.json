@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "plan.product.story-map",
+  "version": "1.0.0",
+  "phase": "plan",
+  "core": {
+    "name": "Outcome Slice Mapping",
+    "originator": "Nous independent synthesis",
+    "source_url": "https://jpattonassociates.com/user-story-mapping/",
+    "operational_rule": "各sliceに利用者の結果、受入条件、未対応範囲を持たせ、依存関係と検証可能性で順序を決める。"
+  },
+  "capabilities": [
+    "plan.slicing",
+    "plan.acceptance"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 92,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "433cad0c550e2d4f315e67093765efb20fe1fdb4e5b401374bd93e5ee0d1a78d",
+  "guidance_hash": "cd265d5100a0211d4c2c1ff120a50d8c5f55926b50bd533d400952dd13a45d3b",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "independent-synthesis"
+  }
+}

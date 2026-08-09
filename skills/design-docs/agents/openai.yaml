@@ -1,0 +1,4 @@
+interface:
+  display_name: "Design Docs"
+  short_description: "要件から設計書体系と差分設計を作る"
+  default_prompt: "Use $design-docs to build or review a traceable design-document set from requirements. Classify documents as required, conditional, or not-applicable with reasons; keep product variants as base-referenced deltas; define deferred diagram specs without creating diagram assets; and validate IDs, links, front matter, and source-of-truth boundaries."

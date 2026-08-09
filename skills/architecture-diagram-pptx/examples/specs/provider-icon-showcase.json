@@ -1,0 +1,291 @@
+{
+  "title": "クラウド製品アイコンの使い分け",
+  "purpose": "同じ構成要素でも、実在するクラウド製品は公式アイコン、概念だけなら汎用アイコンで表現する",
+  "diagram_type": "deployment",
+  "audience": "クラウド設計・運用担当者",
+  "canvas": {
+    "width": 13.333,
+    "height": 7.5
+  },
+  "layout": {
+    "direction": "left-to-right",
+    "allow_staggered": true,
+    "grid": 0.25,
+    "safe_area": {
+      "x": 0.5,
+      "y": 1.1,
+      "w": 12.3,
+      "h": 5.35
+    }
+  },
+  "boundaries": [
+    {
+      "id": "aws-row",
+      "label": "AWS / 公式",
+      "node_ids": [
+        "aws-api",
+        "aws-compute",
+        "aws-data"
+      ],
+      "position": {
+        "x": 0.5,
+        "y": 1.25,
+        "w": 12.25,
+        "h": 1.5
+      },
+      "style": {
+        "fill": "FFF7ED",
+        "line": "FDBA74",
+        "line_style": "solid",
+        "transparency": 8
+      }
+    },
+    {
+      "id": "azure-row",
+      "label": "Azure / 公式",
+      "node_ids": [
+        "azure-api",
+        "azure-compute",
+        "azure-data"
+      ],
+      "position": {
+        "x": 0.5,
+        "y": 3.0,
+        "w": 12.25,
+        "h": 1.5
+      },
+      "style": {
+        "fill": "EFF6FF",
+        "line": "93C5FD",
+        "line_style": "solid",
+        "transparency": 8
+      }
+    },
+    {
+      "id": "gcp-row",
+      "label": "Google Cloud / 公式",
+      "node_ids": [
+        "gcp-api",
+        "gcp-compute",
+        "gcp-data"
+      ],
+      "position": {
+        "x": 0.5,
+        "y": 4.75,
+        "w": 12.25,
+        "h": 1.5
+      },
+      "style": {
+        "fill": "F0FDF4",
+        "line": "86EFAC",
+        "line_style": "solid",
+        "transparency": 8
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "id": "aws-api",
+      "label": "API Gateway",
+      "kind": "gateway",
+      "provider": "aws",
+      "icon": "api-gateway",
+      "role": "入口",
+      "position": {
+        "x": 1.0,
+        "y": 1.75,
+        "w": 1.75,
+        "h": 1.0
+      }
+    },
+    {
+      "id": "aws-compute",
+      "label": "Lambda",
+      "kind": "service",
+      "provider": "aws",
+      "icon": "lambda",
+      "role": "実行",
+      "position": {
+        "x": 5.0,
+        "y": 1.75,
+        "w": 1.75,
+        "h": 1.0
+      }
+    },
+    {
+      "id": "aws-data",
+      "label": "S3",
+      "kind": "data-store",
+      "provider": "aws",
+      "icon": "s3",
+      "role": "保存",
+      "position": {
+        "x": 9.0,
+        "y": 1.75,
+        "w": 1.75,
+        "h": 1.0
+      }
+    },
+    {
+      "id": "azure-api",
+      "label": "API Management",
+      "kind": "gateway",
+      "provider": "azure",
+      "icon": "api-management",
+      "role": "入口",
+      "position": {
+        "x": 1.0,
+        "y": 3.5,
+        "w": 1.75,
+        "h": 1.0
+      }
+    },
+    {
+      "id": "azure-compute",
+      "label": "App Service",
+      "kind": "service",
+      "provider": "azure",
+      "icon": "app-service",
+      "role": "実行",
+      "position": {
+        "x": 5.0,
+        "y": 3.5,
+        "w": 1.75,
+        "h": 1.0
+      }
+    },
+    {
+      "id": "azure-data",
+      "label": "SQL Database",
+      "kind": "data-store",
+      "provider": "azure",
+      "icon": "sql-database",
+      "role": "保存",
+      "position": {
+        "x": 9.0,
+        "y": 3.5,
+        "w": 1.75,
+        "h": 1.0
+      }
+    },
+    {
+      "id": "gcp-api",
+      "label": "Apigee",
+      "kind": "gateway",
+      "provider": "gcp",
+      "icon": "apigee",
+      "role": "入口",
+      "position": {
+        "x": 1.0,
+        "y": 5.25,
+        "w": 1.75,
+        "h": 1.0
+      }
+    },
+    {
+      "id": "gcp-compute",
+      "label": "Cloud Run",
+      "kind": "service",
+      "provider": "gcp",
+      "icon": "cloud-run",
+      "role": "実行",
+      "position": {
+        "x": 5.0,
+        "y": 5.25,
+        "w": 1.75,
+        "h": 1.0
+      }
+    },
+    {
+      "id": "gcp-data",
+      "label": "Cloud Storage",
+      "kind": "data-store",
+      "provider": "gcp",
+      "icon": "cloud-storage",
+      "role": "保存",
+      "position": {
+        "x": 9.0,
+        "y": 5.25,
+        "w": 1.75,
+        "h": 1.0
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "aws-api-compute",
+      "from": "aws-api",
+      "to": "aws-compute",
+      "label": "HTTPS",
+      "relation": "data_flow",
+      "from_anchor": "right",
+      "to_anchor": "left"
+    },
+    {
+      "id": "aws-compute-data",
+      "from": "aws-compute",
+      "to": "aws-data",
+      "label": "保存",
+      "relation": "data_flow",
+      "from_anchor": "right",
+      "to_anchor": "left"
+    },
+    {
+      "id": "azure-api-compute",
+      "from": "azure-api",
+      "to": "azure-compute",
+      "label": "HTTPS",
+      "relation": "data_flow",
+      "from_anchor": "right",
+      "to_anchor": "left"
+    },
+    {
+      "id": "azure-compute-data",
+      "from": "azure-compute",
+      "to": "azure-data",
+      "label": "SQL",
+      "relation": "data_flow",
+      "from_anchor": "right",
+      "to_anchor": "left"
+    },
+    {
+      "id": "gcp-api-compute",
+      "from": "gcp-api",
+      "to": "gcp-compute",
+      "label": "HTTPS",
+      "relation": "data_flow",
+      "from_anchor": "right",
+      "to_anchor": "left"
+    },
+    {
+      "id": "gcp-compute-data",
+      "from": "gcp-compute",
+      "to": "gcp-data",
+      "label": "保存",
+      "relation": "data_flow",
+      "from_anchor": "right",
+      "to_anchor": "left"
+    }
+  ],
+  "legend_relations": [
+    "data_flow"
+  ],
+  "annotations": [
+    {
+      "id": "note",
+      "text": "公式アイコンは実在する製品を表す場合だけ使用。自社サービスや一般概念には generic.* を使う。",
+      "position": {
+        "x": 0.6,
+        "y": 6.92,
+        "w": 11.0,
+        "h": 0.18
+      }
+    }
+  ],
+  "metadata": {
+    "version": "0.4.0",
+    "updated_at": "2026-08-09",
+    "author": "architecture-diagram-pptx example",
+    "assets": "Lucide generic + curated official AWS/Azure/Google Cloud SVG assets"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "implement.performance.budget",
+  "version": "1.0.0",
+  "phase": "implement",
+  "core": {
+    "name": "Performance Budgeting",
+    "originator": "Nous independent synthesis",
+    "source_url": "https://web.dev/articles/performance-budgets",
+    "operational_rule": "平均値だけでなく対象ユーザーに効く分位点と最悪条件を確認し、予算超過を隠さない。"
+  },
+  "capabilities": [
+    "implement.performance",
+    "implement.incremental"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 90,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "20ac3ca1cb3acb4f0220e2791b0d2b9082d218eff1bbd47f0cecdb6babd671f7",
+  "guidance_hash": "c09353083488562188c46a79ea0526933e94e87ecd6e76b60548bd85e5abfbcf",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "independent-synthesis"
+  }
+}

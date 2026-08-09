@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "provider_id": "codex-host",
+  "provider_version": "2026.08",
+  "command": [
+    "/absolute/path/to/provider-capability-adapter"
+  ],
+  "environment_keys": [],
+  "timeout_seconds": 900,
+  "max_output_bytes": 1048576,
+  "network_policy": "host_managed"
+}

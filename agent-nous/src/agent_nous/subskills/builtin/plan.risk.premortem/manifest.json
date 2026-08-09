@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "plan.risk.premortem",
+  "version": "1.0.0",
+  "phase": "plan",
+  "core": {
+    "name": "Pre-mortem Risk Review",
+    "originator": "Nous independent synthesis",
+    "source_url": "https://hbr.org/2007/09/performing-a-project-premortem",
+    "operational_rule": "最も深刻で早期検知できない失敗を優先し、各リスクに所有者・観測方法・回避または縮退策を置く。"
+  },
+  "capabilities": [
+    "plan.risk",
+    "plan.acceptance"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 94,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "e26a315efb7d5501fe44f316bd94e5e6a06211cce28accca5c893450d8468943",
+  "guidance_hash": "920bec0af165a30d727022af3bf0f5e7e46f1a15b5d68ad07e46d80361e5e1ed",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "independent-synthesis"
+  }
+}

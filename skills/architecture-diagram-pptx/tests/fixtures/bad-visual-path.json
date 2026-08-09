@@ -1,0 +1,42 @@
+{
+  "title": "意図しないノード貫通",
+  "purpose": "visual QAがコネクタとノードの重なりを検知できることを確認する",
+  "diagram_type": "network",
+  "audience": "テスト",
+  "canvas": {
+    "width": 13.333,
+    "height": 7.5
+  },
+  "layout": {
+    "direction": "left-to-right",
+    "allow_staggered": false,
+    "grid": 0.25,
+    "safe_area": {
+      "x": 0.5,
+      "y": 1.25,
+      "w": 12.3,
+      "h": 5.25
+    }
+  },
+  "nodes": [
+    {"id": "source", "label": "入口", "kind": "gateway", "position": {"x": 1.0, "y": 3.0, "w": 1.25, "h": 1.0}},
+    {"id": "middle", "label": "中間ノード", "kind": "service", "position": {"x": 3.0, "y": 3.0, "w": 1.25, "h": 1.0}},
+    {"id": "target", "label": "保存先", "kind": "data-store", "position": {"x": 5.0, "y": 3.0, "w": 1.25, "h": 1.0}}
+  ],
+  "edges": [
+    {
+      "id": "source-target",
+      "from": "source",
+      "to": "target",
+      "label": "データ",
+      "relation": "data_flow",
+      "from_anchor": "right",
+      "to_anchor": "left",
+      "route": [{"x": 4.75, "y": 3.5}]
+    }
+  ],
+  "legend_relations": ["data_flow"],
+  "metadata": {"version": "0.1.0", "updated_at": "2026-08-09"},
+  "expect": "fail",
+  "failure_kind": "visual connector/node overlap"
+}

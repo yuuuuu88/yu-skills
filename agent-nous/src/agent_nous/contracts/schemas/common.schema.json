@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "common.schema.json",
+  "$defs": {
+    "task_id": {
+      "type": "string",
+      "pattern": "^[0-9]{8}-[0-9]{4}-[a-z0-9]+(?:-[a-z0-9]+)*(?:-[0-9]{2})?$"
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "phase": {
+      "enum": [
+        "plan",
+        "implement",
+        "review"
+      ]
+    },
+    "lifecycle": {
+      "enum": [
+        "active",
+        "waiting_human",
+        "blocked",
+        "completed",
+        "cancelled"
+      ]
+    },
+    "execution": {
+      "enum": [
+        "idle",
+        "running",
+        "pausing",
+        "paused",
+        "interrupted"
+      ]
+    },
+    "risk": {
+      "enum": [
+        "green",
+        "yellow",
+        "red"
+      ]
+    },
+    "string_list": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "resume_target": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "resume_phase": {"$ref": "#/$defs/phase"},
+        "resume_transition": {"enum": ["answer_received", "approval_granted", "blocker_resolved"]},
+        "blocked_action_ref": {"type": ["string", "null"]},
+        "blocked_artifact_ref": {"type": ["string", "null"]}
+      },
+      "required": ["resume_phase", "resume_transition", "blocked_action_ref", "blocked_artifact_ref"]
+    },
+    "HumanQuestion": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {"const": 1},
+        "question_id": {"type": "string", "minLength": 1},
+        "task_id": {"$ref": "#/$defs/task_id"},
+        "loop_id": {"type": "string", "minLength": 1},
+        "question": {"type": "string", "minLength": 1},
+        "why_now": {"type": "string", "minLength": 1},
+        "blocking_scope": {"enum": ["action", "loop", "phase", "root_task"]},
+        "blocked_refs": {"type": "array", "items": {"type": "string"}},
+        "options": {"type": "array", "minItems": 0, "maxItems": 3, "items": {"type": "object", "additionalProperties": false, "properties": {"option_id": {"type": "string", "minLength": 1}, "label": {"type": "string", "minLength": 1}, "impact": {"type": "string", "minLength": 1}}, "required": ["option_id", "label", "impact"]}},
+        "recommended_option_id": {"type": ["string", "null"]},
+        "free_text_allowed": {"type": "boolean"},
+        "affected_loop_ids": {"type": "array", "items": {"type": "string"}},
+        "resume_target": {"$ref": "#/$defs/resume_target"},
+        "approval_request_ref": {"type": ["string", "null"]},
+        "created_at": {"$ref": "#/$defs/timestamp"}
+      },
+      "required": ["schema_version", "question_id", "task_id", "loop_id", "question", "why_now", "blocking_scope", "blocked_refs", "options", "recommended_option_id", "free_text_allowed", "affected_loop_ids", "resume_target", "approval_request_ref", "created_at"],
+      "allOf": [{"if": {"properties": {"options": {"maxItems": 0}}}, "then": {"properties": {"free_text_allowed": {"const": true}}}}]
+    },
+    "HumanAnswer": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {"const": 1},
+        "answer_id": {"type": "string", "minLength": 1},
+        "task_id": {"$ref": "#/$defs/task_id"},
+        "loop_id": {"type": "string", "minLength": 1},
+        "question_id": {"type": "string", "minLength": 1},
+        "answer_type": {"enum": ["selected_option", "free_text"]},
+        "selected_option_id": {"type": ["string", "null"]},
+        "answer_text": {"type": ["string", "null"]},
+        "applied_scope": {"enum": ["action", "loop", "phase", "root_task"]},
+        "answer_effect": {"enum": ["resume", "replan", "remain_blocked", "cancel"]},
+        "resume_target": {"anyOf": [{"$ref": "#/$defs/resume_target"}, {"type": "null"}]},
+        "answered_by": {"type": "string", "minLength": 1},
+        "answered_at": {"$ref": "#/$defs/timestamp"}
+      },
+      "required": ["schema_version", "answer_id", "task_id", "loop_id", "question_id", "answer_type", "selected_option_id", "answer_text", "applied_scope", "answer_effect", "resume_target", "answered_by", "answered_at"],
+      "allOf": [
+        {"if": {"properties": {"answer_type": {"const": "selected_option"}}}, "then": {"properties": {"selected_option_id": {"type": "string", "minLength": 1}, "answer_text": {"type": "null"}}}},
+        {"if": {"properties": {"answer_type": {"const": "free_text"}}}, "then": {"properties": {"selected_option_id": {"type": "null"}, "answer_text": {"type": "string", "minLength": 1}}}}
+      ]
+    }
+  }
+}

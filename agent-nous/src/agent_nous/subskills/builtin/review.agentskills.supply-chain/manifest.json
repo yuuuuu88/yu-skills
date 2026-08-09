@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "review.agentskills.supply-chain",
+  "version": "1.0.0",
+  "phase": "review",
+  "core": {
+    "name": "Skill Supply-Chain Review",
+    "originator": "Nous independent synthesis",
+    "source_url": "https://agentskills.io/skill-creation/best-practices",
+    "operational_rule": "原文をコピーせず独立guidanceへ再設計したか、更新時にhashとライセンスを再確認できるかを審査する。"
+  },
+  "capabilities": [
+    "review.independence",
+    "review.provenance"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 89,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "031de3a458ea3b62da0d8c136c12c7965f72a8746872c9e29bc317e1de3c5598",
+  "guidance_hash": "077623670d39764267834c53cb82aa2168d0f191d22eee4daf128906205f1066",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "independent-synthesis"
+  }
+}

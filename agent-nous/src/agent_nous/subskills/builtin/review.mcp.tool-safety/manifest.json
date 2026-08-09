@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "review.mcp.tool-safety",
+  "version": "1.0.0",
+  "phase": "review",
+  "core": {
+    "name": "MCP Tool Safety Review",
+    "originator": "Nous independent synthesis",
+    "source_url": "https://modelcontextprotocol.io/specification/2025-11-25/server/tools",
+    "operational_rule": "外部toolが要求する秘密、network、filesystem、変更権限がmanaged actionと承認境界を越えていないことを確認する。"
+  },
+  "capabilities": [
+    "review.independence",
+    "review.tool-safety"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 87,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "73b861fd05f9b361cf1974aff6fd67ba0a01a968f3e357f8952fc18e77367e25",
+  "guidance_hash": "f52e838bb66b496fdea9107a7294f3f16e18d2ad667c28d83119ad2d411f5d93",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "independent-synthesis"
+  }
+}

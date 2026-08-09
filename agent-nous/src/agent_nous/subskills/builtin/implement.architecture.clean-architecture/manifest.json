@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "implement.architecture.clean-architecture",
+  "version": "1.0.0",
+  "phase": "implement",
+  "core": {
+    "name": "Clean Architecture",
+    "originator": "Robert C. Martin",
+    "source_url": "https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html",
+    "operational_rule": "Direct dependencies toward policy and isolate domain rules from frameworks, persistence, UI, and external APIs."
+  },
+  "capabilities": [
+    "architecture.boundaries",
+    "implement.dependencies"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 100,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "b5b1571eef2de9d271a006ea8cf9799dfd0c201e11e0caf5f8578ba0dc8e306d",
+  "guidance_hash": "92bf51260cd22a666db897d65510776f223385eb5104807bc585ca3b45f43e46",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "curated-guidance"
+  }
+}

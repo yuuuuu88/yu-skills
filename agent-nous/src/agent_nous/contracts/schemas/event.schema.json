@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "event.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "event_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "task_id": {
+      "$ref": "common.schema.json#/$defs/task_id"
+    },
+    "revision": {
+      "$ref": "common.schema.json#/$defs/revision"
+    },
+    "transaction_id": {"type": "string", "minLength": 1},
+    "type": {
+      "type": "string",
+      "minLength": 1
+    },
+    "occurred_at": {
+      "$ref": "common.schema.json#/$defs/timestamp"
+    },
+    "actor": {
+      "type": "string"
+    },
+    "payload": {
+      "type": "object"
+    }
+  },
+  "required": [
+    "schema_version",
+    "event_id",
+    "task_id",
+    "revision",
+    "transaction_id",
+    "type",
+    "occurred_at",
+    "actor",
+    "payload"
+  ]
+}

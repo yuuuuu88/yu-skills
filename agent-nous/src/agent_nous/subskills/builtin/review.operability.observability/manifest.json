@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "review.operability.observability",
+  "version": "1.0.0",
+  "phase": "review",
+  "core": {
+    "name": "Operability and Observability",
+    "originator": "Nous independent synthesis",
+    "source_url": "https://sre.google/sre-book/monitoring-distributed-systems/",
+    "operational_rule": "観測データが機密を増やさないことも含め、正常系だけでなく失敗時の診断可能性を証拠化する。"
+  },
+  "capabilities": [
+    "review.operability",
+    "review.independence"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 92,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "4e3770fec0ea47bc0469ac7fa446b45588fd92984c8942a90659a65ae558c729",
+  "guidance_hash": "8877749efcdbde5d16fb4f6c815b8b8f7068b9c26e0016e203639b2a53c29302",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "independent-synthesis"
+  }
+}

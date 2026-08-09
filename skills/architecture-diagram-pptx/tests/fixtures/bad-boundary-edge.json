@@ -1,0 +1,20 @@
+{
+  "title": "境界線に沿うコネクタ",
+  "purpose": "ゾーンの外周をなぞるコネクタを検知する",
+  "diagram_type": "network",
+  "audience": "テスト担当者",
+  "canvas": {"width": 13.333, "height": 7.5},
+  "layout": {"direction": "left-to-right", "grid": 0.25, "safe_area": {"x": 0.5, "y": 1.25, "w": 12.3, "h": 5.25}},
+  "boundaries": [
+    {"id": "private-zone", "label": "Private zone", "position": {"x": 2.0, "y": 2.0, "w": 4.0, "h": 2.0}, "node_ids": ["target"]}
+  ],
+  "nodes": [
+    {"id": "source", "label": "入口", "kind": "gateway", "position": {"x": 0.75, "y": 2.0, "w": 1.25, "h": 1.0}},
+    {"id": "target", "label": "保存先", "kind": "data-store", "position": {"x": 4.0, "y": 2.75, "w": 1.25, "h": 1.0}}
+  ],
+  "edges": [
+    {"id": "bad-route", "from": "source", "to": "target", "relation": "data_flow", "from_anchor": "right", "to_anchor": "left", "route": [{"x": 2.0, "y": 2.5}, {"x": 2.0, "y": 3.25}, {"x": 4.0, "y": 3.25}]}
+  ],
+  "expect": "fail",
+  "failure_kind": "connector on boundary edge"
+}

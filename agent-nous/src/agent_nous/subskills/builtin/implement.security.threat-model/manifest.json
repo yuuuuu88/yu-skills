@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "implement.security.threat-model",
+  "version": "1.0.0",
+  "phase": "implement",
+  "core": {
+    "name": "Threat Modeling",
+    "originator": "Nous independent synthesis",
+    "source_url": "https://owasp.org/www-community/Threat_Modeling",
+    "operational_rule": "秘密・権限・外部入力・テナント境界を必ず列挙し、軽減策をReviewで再確認できるテストへ結び付ける。"
+  },
+  "capabilities": [
+    "implement.security",
+    "implement.incremental"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 92,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "f730753d1ad0dd85828ee097bb84b3ae97587c93d0944d2f569163e15c8839b7",
+  "guidance_hash": "8f4b9058028f8157d05ac21b98b565d18400fc3d554e5f3428e089e8c69d78b4",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "independent-synthesis"
+  }
+}

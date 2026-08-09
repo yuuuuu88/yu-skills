@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "review.security.data-minimization",
+  "version": "1.0.0",
+  "phase": "review",
+  "core": {
+    "name": "Data Minimization Review",
+    "originator": "Nous independent synthesis",
+    "source_url": "https://gdpr-info.eu/art-5-gdpr/",
+    "operational_rule": "何を保存しないか、誰が見られるか、いつ消すかを確認し、最小化を設定とテストへ落とす。"
+  },
+  "capabilities": [
+    "review.privacy",
+    "review.independence"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 94,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "350eace48546c250358e5fefd2aeb1f2b0dfc4e973e8da9dce73f08b3abeea7f",
+  "guidance_hash": "b613a92ca39b7c2dd053a616ede96d63939b9c9bbd1b1366aaedfcb9e5e86630",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "independent-synthesis"
+  }
+}

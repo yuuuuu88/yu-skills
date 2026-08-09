@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "plan.quality.gilb",
+  "version": "1.0.0",
+  "phase": "plan",
+  "core": {
+    "name": "Planguage",
+    "originator": "Tom Gilb",
+    "source_url": "https://shop.elsevier.com/books/competitive-engineering/gilb/978-0-7506-6507-0",
+    "operational_rule": "Give quality goals a scale, current level, minimum, target, and measurement method."
+  },
+  "capabilities": [
+    "plan.quality",
+    "plan.metrics"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 60,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "b91855ba4707a5a939ea256b049b8ee9d64769f7ead9c2e43c7cd6d9bb7a3828",
+  "guidance_hash": "d0bd4114817a4de9464803b048eb6e05363491bc54ddc737d87a8da308156efb",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "curated-guidance"
+  }
+}

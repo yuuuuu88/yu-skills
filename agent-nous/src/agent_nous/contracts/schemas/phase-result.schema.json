@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "phase-result.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "artifact_id": {
+      "type": "string"
+    },
+    "task_id": {
+      "$ref": "common.schema.json#/$defs/task_id"
+    },
+    "phase": {
+      "enum": [
+        "plan",
+        "implement",
+        "review"
+      ]
+    },
+    "cycle": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "created_at": {
+      "$ref": "common.schema.json#/$defs/timestamp"
+    },
+    "summary": {
+      "type": "string"
+    },
+    "inputs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "outputs": {
+      "type": "object"
+    },
+    "decision": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "completed",
+        "needs_plan",
+        "needs_human_input",
+        null
+      ]
+    }
+  },
+  "required": [
+    "schema_version",
+    "artifact_id",
+    "task_id",
+    "phase",
+    "cycle",
+    "created_at",
+    "summary",
+    "inputs",
+    "outputs",
+    "decision"
+  ]
+}

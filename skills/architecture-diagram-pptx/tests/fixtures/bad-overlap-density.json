@@ -1,0 +1,32 @@
+{
+  "title": "重なりと過密の検知",
+  "purpose": "ノード重複、ラベル衝突、過密を検知する",
+  "diagram_type": "component",
+  "audience": "テスト担当者",
+  "expect": "fail",
+  "canvas": {"width": 13.333, "height": 7.5},
+  "layout": {"direction": "left-to-right", "grid": 0.25, "safe_area": {"x": 0.45, "y": 1.1, "w": 12.4, "h": 5.35}},
+  "nodes": [
+    {"id": "n1", "label": "受付", "kind": "service", "position": {"x": 1.0, "y": 2.5, "w": 1.5, "h": 0.8}},
+    {"id": "n2", "label": "重なったサービス", "kind": "service", "position": {"x": 1.8, "y": 2.7, "w": 1.5, "h": 0.8}},
+    {"id": "n3", "label": "処理", "kind": "service", "position": {"x": 4.0, "y": 2.5, "w": 1.5, "h": 0.8}},
+    {"id": "n4", "label": "保存", "kind": "service", "position": {"x": 6.0, "y": 2.5, "w": 1.5, "h": 0.8}},
+    {"id": "n5", "label": "監視", "kind": "ops", "position": {"x": 8.0, "y": 2.5, "w": 1.5, "h": 0.8}},
+    {"id": "n6", "label": "補助6", "kind": "aux", "position": {"x": 1.0, "y": 4.5, "w": 1.0, "h": 0.8}},
+    {"id": "n7", "label": "補助7", "kind": "aux", "position": {"x": 2.25, "y": 4.5, "w": 1.0, "h": 0.8}},
+    {"id": "n8", "label": "補助8", "kind": "aux", "position": {"x": 3.5, "y": 4.5, "w": 1.0, "h": 0.8}},
+    {"id": "n9", "label": "補助9", "kind": "aux", "position": {"x": 4.75, "y": 4.5, "w": 1.0, "h": 0.8}},
+    {"id": "n10", "label": "補助10", "kind": "aux", "position": {"x": 6.0, "y": 4.5, "w": 1.0, "h": 0.8}},
+    {"id": "n11", "label": "補助11", "kind": "aux", "position": {"x": 7.25, "y": 4.5, "w": 1.0, "h": 0.8}},
+    {"id": "n12", "label": "補助12", "kind": "aux", "position": {"x": 8.5, "y": 4.5, "w": 1.0, "h": 0.8}},
+    {"id": "n13", "label": "補助13", "kind": "aux", "position": {"x": 9.75, "y": 4.5, "w": 1.0, "h": 0.8}},
+    {"id": "n14", "label": "補助14", "kind": "aux", "position": {"x": 11.0, "y": 4.5, "w": 1.0, "h": 0.8}},
+    {"id": "n15", "label": "補助15", "kind": "aux", "position": {"x": 1.0, "y": 5.5, "w": 1.0, "h": 0.8}},
+    {"id": "n16", "label": "補助16", "kind": "aux", "position": {"x": 2.25, "y": 5.5, "w": 1.0, "h": 0.8}},
+    {"id": "n17", "label": "補助17", "kind": "aux", "position": {"x": 3.5, "y": 5.5, "w": 1.0, "h": 0.8}},
+    {"id": "n18", "label": "補助18", "kind": "aux", "position": {"x": 4.75, "y": 5.5, "w": 1.0, "h": 0.8}},
+    {"id": "n19", "label": "補助19", "kind": "aux", "position": {"x": 6.0, "y": 5.5, "w": 1.0, "h": 0.8}}
+  ],
+  "edges": [{"id": "collision-label", "from": "n1", "to": "n3", "label": "長い経路ラベル", "style": "solid", "label_box": {"x": 1.9, "y": 2.75, "w": 1.6, "h": 0.35}}],
+  "metadata": {"version": "0.2.0", "updated_at": "2026-08-09", "author": "fixture", "assets": "none"}
+}

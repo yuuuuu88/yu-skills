@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "knowledge-sources.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": 1},
+    "task_id": {"$ref": "common.schema.json#/$defs/task_id"},
+    "loop_id": {"type": "string", "minLength": 1},
+    "revision": {"$ref": "common.schema.json#/$defs/revision"},
+    "transaction_id": {"type": "string", "pattern": "^tx-[A-Za-z0-9._-]+$"},
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "source_id": {"type": "string", "minLength": 1},
+          "title": {"type": "string", "minLength": 1},
+          "locator": {"type": "string", "minLength": 1},
+          "type": {"type": "string", "minLength": 1},
+          "authority": {"type": "string"},
+          "version_or_commit": {"type": ["string", "null"]},
+          "section_or_lines": {"type": ["string", "null"]},
+          "published_at": {"type": ["string", "null"]},
+          "retrieved_at": {"$ref": "common.schema.json#/$defs/timestamp"},
+          "source_content_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+          "content_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+          "volatility": {"enum": ["high", "medium", "low"]},
+          "supports": {"type": "array", "items": {"type": "string"}},
+          "contradicts": {"type": "array", "items": {"type": "string"}},
+          "reliability_notes": {"type": "string"}
+          ,"record_revision": {"type": "integer", "minimum": 1}
+          ,"supersedes": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+        },
+        "required": ["source_id", "title", "locator", "type", "authority", "version_or_commit", "section_or_lines", "published_at", "retrieved_at", "source_content_hash", "content_hash", "volatility", "supports", "contradicts", "reliability_notes", "record_revision", "supersedes"]
+      }
+    },
+    "updated_at": {"$ref": "common.schema.json#/$defs/timestamp"}
+  },
+  "required": ["schema_version", "task_id", "loop_id", "revision", "transaction_id", "sources", "updated_at"]
+}

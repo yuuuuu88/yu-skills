@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "implement.testing.property",
+  "version": "1.0.0",
+  "phase": "implement",
+  "core": {
+    "name": "Property-Oriented Testing",
+    "originator": "Nous independent synthesis",
+    "source_url": "https://hypothesis.works/articles/what-is-property-based-testing/",
+    "operational_rule": "ランダム性を品質の根拠にせず、seed・生成条件・反例を再実行可能な証拠として保存する。"
+  },
+  "capabilities": [
+    "implement.testing",
+    "implement.incremental"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 93,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "0a39dd76c9be4b32913f19806df6fd13ce467a86e6de5d992e5336edba3c32af",
+  "guidance_hash": "d50cbae0c62fe7ddacf8b1399ded5da8023b396693ec4315d763a5b74901bca5",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "independent-synthesis"
+  }
+}

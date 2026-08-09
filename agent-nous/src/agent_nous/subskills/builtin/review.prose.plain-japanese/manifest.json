@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "review.prose.plain-japanese",
+  "version": "1.0.0",
+  "phase": "review",
+  "core": {
+    "name": "Plain Japanese Review",
+    "originator": "Nous independent synthesis",
+    "source_url": "https://www.bunka.go.jp/seisaku/kokugo_nihongo/kokugo_shisaku/94336802.html",
+    "operational_rule": "丁寧さや短さを目的化せず、意味・責任主体・例外を保ったまま理解コストだけを下げる。"
+  },
+  "capabilities": [
+    "review.japanese-prose",
+    "review.independence"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 97,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "0cbd28946ad2f8976aaf24fcf8314d4ae082a03f5605e43d0bfe72eecf439c8a",
+  "guidance_hash": "17d9a7798db642df6712283ba62696067ef5a3e84ee55f879df641584797f683",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "independent-synthesis"
+  }
+}

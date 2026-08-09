@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "knowledge.sources.primary-first",
+  "version": "1.0.0",
+  "phase": "knowledge",
+  "core": {
+    "name": "Primary Source First",
+    "originator": "Nous independent synthesis",
+    "source_url": "https://hapgood.us/2019/06/19/sift-the-four-moves/",
+    "operational_rule": "検索順位や引用数を信頼度と混同せず、主張ごとに出典、日付、適用範囲、直接確認の有無を残す。"
+  },
+  "capabilities": [
+    "knowledge.source.verify",
+    "knowledge.provenance"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 96,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "2af25c19aa922ba5c74df4f53c62d1ec69234307072257c3fdf6490056f2756a",
+  "guidance_hash": "c5b24e61e653adc17b324ff1894383dc1abb26b646a1f4fc329353fd5d993559",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "independent-synthesis"
+  }
+}

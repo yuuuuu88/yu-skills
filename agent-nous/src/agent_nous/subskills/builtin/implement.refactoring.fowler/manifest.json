@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "implement.refactoring.fowler",
+  "version": "1.0.0",
+  "phase": "implement",
+  "core": {
+    "name": "Refactoring",
+    "originator": "Martin Fowler",
+    "source_url": "https://refactoring.com/",
+    "operational_rule": "Apply small behavior-preserving transformations and verify after each step; control mixing structural and behavior changes."
+  },
+  "capabilities": [
+    "implement.refactoring",
+    "implement.regression"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 80,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "2025705dbc7b1386400a98de048dd4cb09f4f0d33a3c939f1cbdb176cfef23cf",
+  "guidance_hash": "612a72b66d0d86cb5412ed9a741b6c70fff978db8ea99f8730b87084185253fa",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "curated-guidance"
+  }
+}

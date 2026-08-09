@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "selection-record.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 2
+    },
+    "selection_id": {
+      "type": "string"
+    },
+    "task_id": {
+      "$ref": "common.schema.json#/$defs/task_id"
+    },
+    "loop_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._-]+$"
+    },
+    "cycle": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "phase": {
+      "enum": [
+        "plan",
+        "implement",
+        "review"
+      ]
+    },
+    "requested_capabilities": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "selected": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          },
+          "content_hash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "guidance_hash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "role": {
+            "enum": [
+              "primary",
+              "advisor",
+              "validator"
+            ]
+          },
+          "score": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "version",
+          "content_hash",
+          "guidance_hash",
+          "role",
+          "score"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "registry_revision": {
+      "type": "string"
+    },
+    "input_snapshot_digest": {
+      "type": "string"
+    },
+    "selection_rationale": {
+      "type": "string"
+    },
+    "pinned": {
+      "const": true
+    },
+    "fallback_used": {
+      "type": "boolean"
+    },
+    "created_at": {
+      "$ref": "common.schema.json#/$defs/timestamp"
+    }
+  },
+  "required": [
+    "schema_version",
+    "selection_id",
+    "task_id",
+    "loop_id",
+    "cycle",
+    "phase",
+    "requested_capabilities",
+    "selected",
+    "fallback_used",
+    "registry_revision",
+    "input_snapshot_digest",
+    "selection_rationale",
+    "pinned",
+    "created_at"
+  ]
+}

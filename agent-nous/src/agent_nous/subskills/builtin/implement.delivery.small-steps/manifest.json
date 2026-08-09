@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "implement.delivery.small-steps",
+  "version": "1.0.0",
+  "phase": "implement",
+  "core": {
+    "name": "Small Reversible Changes",
+    "originator": "Nous independent synthesis",
+    "source_url": "https://trunkbaseddevelopment.com/",
+    "operational_rule": "大きな変更を一度に通すのではなく、各commitまたはcheckpointでビルド・テスト・復旧可能性を確認する。"
+  },
+  "capabilities": [
+    "implement.change-control",
+    "implement.incremental"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 89,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "d7452def4e5762eb0072d0355490feb7d00fd66749e3cd8105431dcc2f6940b5",
+  "guidance_hash": "768b1415ad5e1dce951a40271dbad440d4a4de35eee14feddf4b515773357def",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "independent-synthesis"
+  }
+}

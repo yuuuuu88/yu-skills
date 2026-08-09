@@ -1,0 +1,63 @@
+---
+id: CODEX-001
+type: codex-handoff
+title: Nous Pilot Codex project handoff
+status: accepted
+source_of_truth: false
+created: 2026-08-09
+updated: 2026-08-09
+related: [REQ-001, ARCH-001, PLAN-001]
+managed_by: repository-bootstrap
+---
+# Nous Pilot Codex handoff
+
+## Project
+
+Nous Pilot is a separate development-control-plane project built around the durable Nous Loop. It is intended to make software development agentic from research through implementation, verification, review, repair, and CI/PR follow-up.
+
+## Repository map
+
+- `docs/product/`: user problem, goals, scope, requirements, terminology
+- `docs/design/architecture/`: system boundaries and runtime model
+- `docs/design/features/`: vertical slices and user-visible workflows
+- `docs/design/contracts/`: task, Agent, provider, verification, and integration contracts
+- `docs/design/cross-cutting/`: security, policy, observability, and human gates
+- `docs/design/decisions/`: architecture decision records
+- `docs/operations/`: setup and operational runbooks
+- `docs/plans/`: implementation order, checkpoints, and progress
+- `src/`: Phase 1 Pilot package, including intake, context, runtime adapter, control plane, orchestration, workspace, and verification
+- `tests/`: Phase 1 contract, integration, failure-path, and safety tests
+- `examples/`: safe configuration and provider examples
+
+## Design sources of truth
+
+- Product: `docs/product/`
+- Architecture: `docs/design/architecture/`
+- Features: `docs/design/features/`
+- Contracts: `docs/design/contracts/`
+- Cross-cutting: `docs/design/cross-cutting/`
+- Decisions: `docs/design/decisions/`
+- Operations: `docs/operations/`
+- Progress: `docs/plans/`
+
+## Core requirement
+
+Nous Pilot must use subagents as a first-class execution boundary. The Coordinator coordinates and judges; it must not silently become the sole planner, implementer, tester, and reviewer.
+
+## Implementation status and next entry point
+
+Phase 1–4 are complete as a local, policy-safe implementation. The normal
+user-facing configuration is the single `nous-pilot.toml`; `.nous/config.json`
+is generated runtime state. Read [docs/plans/bootstrap-plan.md](./docs/plans/bootstrap-plan.md)
+for the implementation plan. Further work should use the existing
+[`agent-nous`](../agent-nous/skill/nous/SKILL.md) runtime for hardening or for
+separately approved live/remote adapters.
+
+## Constraints
+
+- No secret values in repository artifacts or logs.
+- No default live network, paid provider, remote push, merge, or deployment side effects.
+- No automatic solo fallback when required subagents are unavailable.
+- No hidden holdout prompts or answers in the public repository.
+- The external Agent bridge requires an explicit JSON stdin/stdout command; an empty command is a durable blocked state.
+- Local apply is human-gated and commit-candidate generation never commits or pushes.

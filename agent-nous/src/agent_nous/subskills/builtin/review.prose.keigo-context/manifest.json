@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "review.prose.keigo-context",
+  "version": "1.0.0",
+  "phase": "review",
+  "core": {
+    "name": "Contextual Japanese Register",
+    "originator": "Nous independent synthesis",
+    "source_url": "https://www.bunka.go.jp/seisaku/bunkashingikai/kokugo/hokoku/pdf/keigo_tosin.pdf",
+    "operational_rule": "丁寧化で責任主体や条件を曖昧にしない。不要な敬語や過剰なへりくだりも修正候補にする。"
+  },
+  "capabilities": [
+    "review.independence",
+    "review.japanese-prose"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 82,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "b68a3907bb63ba7ae175e6587cc7bb13d2af112741a7e6efbec35163997b78f7",
+  "guidance_hash": "94fc74a31ce4ade9cb205c3b22a2a3c726013095bf85ad2e2f4ba0e0a8452c10",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "independent-synthesis"
+  }
+}

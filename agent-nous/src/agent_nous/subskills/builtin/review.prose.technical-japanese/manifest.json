@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "id": "review.prose.technical-japanese",
+  "version": "1.0.0",
+  "phase": "review",
+  "core": {
+    "name": "Technical Japanese Documentation Review",
+    "originator": "Nous curated guidance",
+    "source_url": "https://jtca.org/learn-tc/publication/guide_jsg/",
+    "operational_rule": "Check whether a technical reader can execute the described work and recover from expected failures without altering technical facts."
+  },
+  "capabilities": [
+    "review.technical-writing",
+    "review.factuality",
+    "review.readability"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 88,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "bc01ddf31425697b5e655456d8dc5f48c4e96b66fce4e7f04dea55da2aba9869",
+  "guidance_hash": "66a9452db9885ab704ceaef14db5ea6ca089c50852522bd120a16e409c250138",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "curated-guidance"
+  }
+}

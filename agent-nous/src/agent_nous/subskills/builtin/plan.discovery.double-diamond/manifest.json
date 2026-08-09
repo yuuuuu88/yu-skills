@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "plan.discovery.double-diamond",
+  "version": "1.0.0",
+  "phase": "plan",
+  "core": {
+    "name": "Double-Diamond Discovery",
+    "originator": "Nous independent synthesis",
+    "source_url": "https://www.designcouncil.org.uk/our-resources/framework-for-innovation-design-councils-evolved-double-diamond/",
+    "operational_rule": "探索と収束を混ぜず、問題定義が証拠で固定されるまで解決策を確定しない。"
+  },
+  "capabilities": [
+    "plan.discovery",
+    "plan.acceptance"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 95,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "6df07d477206ea16315882aee148e99a1714b0b7bdffe6a24fa75df09b4c96f6",
+  "guidance_hash": "96ecc6fc1f25cbcb7f772644c807a58a8f63e039f13bc32f45068fb1acc54e4a",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "independent-synthesis"
+  }
+}

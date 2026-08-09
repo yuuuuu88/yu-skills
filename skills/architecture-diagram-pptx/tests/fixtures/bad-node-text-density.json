@@ -1,0 +1,16 @@
+{
+  "title": "ノード内文字の詰まり",
+  "purpose": "コンパクトなノードで製品名と役割が重なる状態を検知する",
+  "diagram_type": "container",
+  "audience": "テスト担当者",
+  "canvas": {"width": 13.333, "height": 7.5},
+  "layout": {"direction": "left-to-right", "grid": 0.25, "safe_area": {"x": 0.5, "y": 1.25, "w": 12.3, "h": 5.25}},
+  "nodes": [
+    {"id": "compact", "label": "注文サービス", "kind": "service", "role": "受付・判定", "position": {"x": 3.0, "y": 3.0, "w": 0.9, "h": 0.8}},
+    {"id": "data", "label": "注文DB", "kind": "data-store", "position": {"x": 6.0, "y": 3.0, "w": 1.0, "h": 1.0}}
+  ],
+  "edges": [{"id": "compact-data", "from": "compact", "to": "data", "label": "保存", "relation": "data_flow", "from_anchor": "right", "to_anchor": "left"}],
+  "legend_relations": ["data_flow"],
+  "expect": "fail",
+  "failure_kind": "node text density"
+}

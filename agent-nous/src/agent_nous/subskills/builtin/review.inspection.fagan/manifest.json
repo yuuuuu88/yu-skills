@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "review.inspection.fagan",
+  "version": "1.0.0",
+  "phase": "review",
+  "core": {
+    "name": "Software Inspection",
+    "originator": "Michael Fagan",
+    "source_url": "https://research.ibm.com/publications/advances-in-software-inspections",
+    "operational_rule": "Separate preparation, defect detection, recording, correction, and follow-up; identify reproducible defects before solution debate."
+  },
+  "capabilities": [
+    "review.inspection",
+    "review.independence"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 90,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "ab1d9a61cd688a22c9ea512bc5f15dfb9f7646bc2b139eb3196f4f35bf5d5e95",
+  "guidance_hash": "598c60d8d0190cd4d34f363f8a663f88368f1b91049bacc2ce145e90e62cbd99",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "curated-guidance"
+  }
+}

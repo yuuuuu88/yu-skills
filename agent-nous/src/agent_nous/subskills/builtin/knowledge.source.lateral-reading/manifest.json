@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "knowledge.source.lateral-reading",
+  "version": "1.0.0",
+  "phase": "knowledge",
+  "core": {
+    "name": "Lateral Reading",
+    "originator": "Sam Wineburg and Sarah McGrew",
+    "source_url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3048994",
+    "operational_rule": "Leave the source and inspect independent descriptions of its author and claims before close reading."
+  },
+  "capabilities": [
+    "knowledge.source.verify",
+    "knowledge.corroborate"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 90,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "2f9d7fe540079883d769c1df13bc0e3dff93c3bec0c2c65ead59211a84992f78",
+  "guidance_hash": "8fb4ef6018011549cfdd4fbc42ea970d803b22756d2c01e4d7637a1a17c9138c",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "curated-guidance"
+  }
+}

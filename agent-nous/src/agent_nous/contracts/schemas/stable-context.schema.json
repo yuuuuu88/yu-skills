@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "stable-context.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "task_id": {
+      "$ref": "common.schema.json#/$defs/task_id"
+    },
+    "revision": {
+      "$ref": "common.schema.json#/$defs/revision"
+    },
+    "display_title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "confirmed_requirements": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "decisions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "open_questions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "risks": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "knowledge_claim_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "human_question_refs": {"type": "array", "items": {"type": "object"}},
+    "human_answer_refs": {"type": "array", "items": {"type": "object"}},
+    "updated_at": {
+      "$ref": "common.schema.json#/$defs/timestamp"
+    }
+  },
+  "required": [
+    "schema_version",
+    "task_id",
+    "revision",
+    "display_title",
+    "confirmed_requirements",
+    "decisions",
+    "open_questions",
+    "risks",
+    "knowledge_claim_refs",
+    "human_question_refs",
+    "human_answer_refs",
+    "updated_at"
+  ]
+}

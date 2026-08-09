@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "review.security.asvs",
+  "version": "1.0.0",
+  "phase": "review",
+  "core": {
+    "name": "Application Security Verification Standard",
+    "originator": "OWASP Foundation",
+    "source_url": "https://owasp.org/www-project-application-security-verification-standard/",
+    "operational_rule": "For applicable web security concerns, record requirement ID, method, evidence, result, and reason for omissions."
+  },
+  "capabilities": [
+    "review.security",
+    "safety.verification"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 60,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "bdf19c0d6da328bad3e28db7e1d4a544549385bbe3e38b744a50a15bd7caab0b",
+  "guidance_hash": "3434d6837f61d58ad7a0dbc3c916711437e0693a5f6e09530706416cdd0deb4b",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "curated-guidance"
+  }
+}

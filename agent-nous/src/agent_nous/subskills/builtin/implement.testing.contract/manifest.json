@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "implement.testing.contract",
+  "version": "1.0.0",
+  "phase": "implement",
+  "core": {
+    "name": "Boundary Contract Testing",
+    "originator": "Nous independent synthesis",
+    "source_url": "https://pactflow.io/how-pact-works/",
+    "operational_rule": "契約を実装詳細ではなく観測可能なデータ・エラー・互換性として固定し、破壊的変更を先に検出する。"
+  },
+  "capabilities": [
+    "implement.testing",
+    "implement.incremental"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 94,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "9ccc94c36805e76a457728c1d0b8d6e77f86fbd97110a9c8edadc271d2708e06",
+  "guidance_hash": "7b3b621737fc11d9ad2c27e00202dc25dce412e374b7904f9e3f3d8ccdd20ea1",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "independent-synthesis"
+  }
+}

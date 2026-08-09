@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "probe-evidence.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": 1},
+    "evidence_id": {"type": "string", "minLength": 1},
+    "action_id": {"type": "string", "minLength": 1},
+    "original_action_id": {"type": ["string", "null"]},
+    "probe_kind": {"enum": ["preflight", "postcheck", "reconcile"]},
+    "observed_at": {"$ref": "common.schema.json#/$defs/timestamp"},
+    "observer_identity": {"type": "string", "minLength": 1},
+    "target_fingerprint": {"type": "string"},
+    "result": {"enum": ["pass", "fail", "ambiguous"]},
+    "reconcile_outcome": {"enum": ["completed_verified", "not_started_safe_to_retry", "partial_requires_repair", "ambiguous_requires_human", null]},
+    "facts": {"type": "object"},
+    "artifact_refs": {"type": "array", "items": {"type": "string"}},
+    "redaction_summary": {"type": "object"}
+  },
+  "required": ["schema_version", "evidence_id", "action_id", "original_action_id", "probe_kind", "observed_at", "observer_identity", "target_fingerprint", "result", "reconcile_outcome", "facts", "artifact_refs", "redaction_summary"],
+  "allOf": [
+    {"if": {"properties": {"probe_kind": {"const": "reconcile"}}}, "then": {"properties": {"original_action_id": {"type": "string", "minLength": 1}, "reconcile_outcome": {"enum": ["completed_verified", "not_started_safe_to_retry", "partial_requires_repair", "ambiguous_requires_human"]}}, "required": ["original_action_id", "reconcile_outcome"]}},
+    {"if": {"properties": {"probe_kind": {"enum": ["preflight", "postcheck"]}}}, "then": {"properties": {"original_action_id": {"type": "null"}, "reconcile_outcome": {"type": "null"}}}}
+  ]
+}

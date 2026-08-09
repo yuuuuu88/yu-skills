@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "implement.provider-boundary",
+  "version": "1.0.0",
+  "phase": "implement",
+  "core": {
+    "name": "Provider Boundary Implementation",
+    "originator": "Nous independent synthesis",
+    "source_url": "https://agentskills.io/specification",
+    "operational_rule": "providerの切替に必要な入力、出力、error、usage、timeout、policyを明示的なadapter契約にする。"
+  },
+  "capabilities": [
+    "implement.incremental",
+    "architecture.boundaries"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 83,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "5c2551e33fcaf853ce0a07a375dbe3967c4b2e5876221f95bfc43f74ec52ab78",
+  "guidance_hash": "6aeb49767c92e1d2a6b1a26a1496bbecbbcc9f08d9c72648dd3e51840d44913e",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "independent-synthesis"
+  }
+}

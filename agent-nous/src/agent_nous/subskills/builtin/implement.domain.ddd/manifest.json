@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "implement.domain.ddd",
+  "version": "1.0.0",
+  "phase": "implement",
+  "core": {
+    "name": "Domain-Driven Design",
+    "originator": "Eric Evans",
+    "source_url": "https://www.domainlanguage.com/ddd/",
+    "operational_rule": "Use one explicit ubiquitous language per bounded context and encode domain invariants in code and tests."
+  },
+  "capabilities": [
+    "implement.domain-model",
+    "architecture.boundaries"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 70,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "635f955523470a69629e5c4b2c9b02fb287b75143cc16dcb89e235ae04ebe4f5",
+  "guidance_hash": "7eeee00ed17df65925682d48fe2b65a999c303e046f0980ceb82ed2b67bfce1d",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "curated-guidance"
+  }
+}

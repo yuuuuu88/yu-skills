@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "review.requirements.traceability",
+  "version": "1.0.0",
+  "phase": "review",
+  "core": {
+    "name": "Requirement Traceability",
+    "originator": "Nous independent synthesis",
+    "source_url": "https://www.iso.org/standard/72042.html",
+    "operational_rule": "要求→変更→検証→証拠を辿り、要求の追加・解釈変更・未検証の前提を明示する。"
+  },
+  "capabilities": [
+    "review.traceability",
+    "review.independence"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 96,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "7be6adb894b7408adc24be67dd87b89d562935ef4d768fb0ba703aad2338ebbf",
+  "guidance_hash": "748c7c72a4519f55d5cc14dfe9656c0a690ea03fb8f6ecbc2cc8866ea75befd1",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "independent-synthesis"
+  }
+}

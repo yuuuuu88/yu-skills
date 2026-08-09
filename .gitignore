@@ -1,0 +1,46 @@
+# Python environments, caches, and build output
+**/.venv/
+**/venv/
+**/__pycache__/
+*.py[cod]
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/.hypothesis/
+**/build/
+**/dist/
+**/*.egg-info/
+
+# Local runtime state and task data
+**/.nous/
+**/tasks/
+**/requests/
+**/runtime/
+**/sandboxes/
+**/agent-runs/
+**/eval-runs/
+
+# Environment files and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.csr
+
+# JavaScript dependencies and local tooling
+**/node_modules/
+**/.next/
+
+# OS/editor/tool noise
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# PowerPoint creates these lock files while a deck is open.
+**/~$*.pptx

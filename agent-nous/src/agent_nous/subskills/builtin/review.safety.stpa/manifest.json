@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "review.safety.stpa",
+  "version": "1.0.0",
+  "phase": "review",
+  "core": {
+    "name": "STPA",
+    "originator": "Nancy Leveson and John Thomas",
+    "source_url": "https://psas.scripts.mit.edu/home/get_file.php?name=STPA_handbook.pdf",
+    "operational_rule": "Review losses, hazards, control structure, unsafe control actions, causal scenarios, and required constraints."
+  },
+  "capabilities": [
+    "review.safety",
+    "review.system-effects"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 80,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "b098fd155b0d55ee004daac1eded6be4361c217caf7c0ac57bcc072a7a09a57d",
+  "guidance_hash": "5d9332af5c2c7d4f79b62c7a32510d9b7265b12f7e3b7076ea1da6192f7b55f5",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "curated-guidance"
+  }
+}

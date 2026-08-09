@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "implement.testing.tdd",
+  "version": "1.0.0",
+  "phase": "implement",
+  "core": {
+    "name": "Test-Driven Development",
+    "originator": "Kent Beck",
+    "source_url": "https://kentbeck.com/",
+    "operational_rule": "For an observable behavior, make a small test fail, implement the minimum, then refactor under passing tests."
+  },
+  "capabilities": [
+    "implement.testing",
+    "implement.incremental"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 90,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "54d56f6d7689877432c715d1a83b053aec686830edaac2802056d87af09e58d9",
+  "guidance_hash": "7c16eaef1529ab95bbf28bbf031b19957b9ec013a6687090fdf167ff7f234933",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "curated-guidance"
+  }
+}

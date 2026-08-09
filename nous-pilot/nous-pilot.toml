@@ -1,0 +1,19 @@
+[project]
+mode = "personal"
+
+[run]
+cycles = 3
+lease_seconds = 600
+timeout_seconds = 300
+
+[agents]
+mode = "external"
+reviewers = 2
+# Optional: JSON stdin/stdout Agent command. Empty means safe blocked mode.
+# command = ["/absolute/path/to/your-agent"]
+
+[research]
+web = true
+
+[remote]
+mode = "ask"

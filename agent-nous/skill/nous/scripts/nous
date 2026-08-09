@@ -1,0 +1,27 @@
+#!/usr/bin/env sh
+set -eu
+
+SCRIPT_PATH=$0
+if command -v realpath >/dev/null 2>&1; then
+  SCRIPT_PATH=$(realpath "$SCRIPT_PATH")
+elif command -v readlink >/dev/null 2>&1; then
+  while [ -L "$SCRIPT_PATH" ]; do
+    LINK=$(readlink "$SCRIPT_PATH")
+    case "$LINK" in
+      /*) SCRIPT_PATH=$LINK ;;
+      *) SCRIPT_PATH=$(dirname "$SCRIPT_PATH")/$LINK ;;
+    esac
+  done
+fi
+
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$SCRIPT_PATH")" && pwd)
+PROJECT_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/../../.." && pwd)
+LAUNCHER="$PROJECT_DIR/bin/nous"
+
+if [ ! -x "$LAUNCHER" ]; then
+  printf '%s\n' "nous skill: runtime launcher is unavailable: $LAUNCHER" >&2
+  printf '%s\n' "Install this Skill from an agent-nous source checkout and initialize its project environment." >&2
+  exit 2
+fi
+
+exec "$LAUNCHER" "$@"

@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "action.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "action_id": {
+      "type": "string"
+    },
+    "task_id": {
+      "$ref": "common.schema.json#/$defs/task_id"
+    },
+    "kind": {
+      "enum": [
+        "filesystem.read",
+        "filesystem.write",
+        "process.run",
+        "git.local",
+        "git.remote",
+        "network",
+        "credential",
+        "paid"
+      ]
+    },
+    "risk": {
+      "$ref": "common.schema.json#/$defs/risk"
+    },
+    "repository_root": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "targets": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "command": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "string"
+      }
+    },
+    "network_destinations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "estimated_cost_usd": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "approval_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "loop_id": {"type": "string", "minLength": 1},
+    "expected_state_revision": {"type": ["integer", "null"], "minimum": 1},
+    "request_id": {"type": ["string", "null"]},
+    "idempotency_key": {"type": ["string", "null"]},
+    "expected_effect": {"type": ["string", "null"]},
+    "plan_ref": {"type": ["string", "null"]},
+    "plan_content_hash": {"type": ["string", "null"]},
+    "environment": {"type": "string", "minLength": 1}
+    ,"reservation_ids": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true}
+    ,"resource_ids": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true}
+  },
+  "required": [
+    "schema_version",
+    "action_id",
+    "task_id",
+    "kind",
+    "risk",
+    "repository_root",
+    "targets",
+    "command",
+    "network_destinations",
+    "estimated_cost_usd",
+    "approval_id",
+    "digest",
+    "loop_id",
+    "expected_state_revision",
+    "request_id",
+    "idempotency_key",
+    "expected_effect",
+    "plan_ref",
+    "plan_content_hash",
+    "environment"
+    ,"reservation_ids"
+    ,"resource_ids"
+  ]
+}

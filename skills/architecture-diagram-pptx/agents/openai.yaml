@@ -1,0 +1,4 @@
+interface:
+  display_name: "Architecture Diagram PPTX"
+  short_description: "編集可能なPowerPoint構成図を設計・生成する"
+  default_prompt: "基盤構成図やネットワーク経路図を、作法・アイコン配置・編集性を守った編集可能なPPTXで作成してください。"

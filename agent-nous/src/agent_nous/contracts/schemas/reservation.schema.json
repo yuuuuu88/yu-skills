@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "reservation.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": 1},
+    "reservation_id": {"type": "string", "pattern": "^res-[A-Za-z0-9._-]+$"},
+    "task_id": {"$ref": "common.schema.json#/$defs/task_id"},
+    "loop_id": {"type": "string", "minLength": 1},
+    "contract_ref": {"type": "string", "minLength": 1},
+    "resource": {"type": "string", "pattern": "^[a-z][a-z0-9+.-]*://.+"},
+    "mode": {"enum": ["shared_read", "exclusive_write", "exclusive_effect", "advisory"]},
+    "input_version_ref": {"type": ["string", "null"]},
+    "status": {"enum": ["requested", "held", "released", "expired", "conflicted"]},
+    "lease_owner": {"type": ["string", "null"]},
+    "lease_token": {"type": ["string", "null"]},
+    "acquired_at": {"anyOf": [{"$ref": "common.schema.json#/$defs/timestamp"}, {"type": "null"}]},
+    "expires_at": {"anyOf": [{"$ref": "common.schema.json#/$defs/timestamp"}, {"type": "null"}]},
+    "release_reason": {"type": ["string", "null"]},
+    "created_at": {"$ref": "common.schema.json#/$defs/timestamp"},
+    "updated_at": {"$ref": "common.schema.json#/$defs/timestamp"}
+  },
+  "required": ["schema_version", "reservation_id", "task_id", "loop_id", "contract_ref", "resource", "mode", "input_version_ref", "status", "lease_owner", "lease_token", "acquired_at", "expires_at", "release_reason", "created_at", "updated_at"]
+}

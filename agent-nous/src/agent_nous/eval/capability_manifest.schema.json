@@ -1,0 +1,404 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "suite_id",
+    "suite_version",
+    "expected_task_count",
+    "trial_policy",
+    "dimensions",
+    "tasks"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "suite_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "suite_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "expected_task_count": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "trial_policy": {
+      "type": "object",
+      "required": [
+        "repetitions",
+        "minimum_successes",
+        "isolation"
+      ],
+      "properties": {
+        "repetitions": {
+          "const": 3
+        },
+        "minimum_successes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3
+        },
+        "isolation": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "dimensions": {
+      "type": "object",
+      "required": [
+        "weights"
+      ],
+      "properties": {
+        "weights": {
+          "type": "object",
+          "required": [
+            "outcome",
+            "planning",
+            "recovery",
+            "research",
+            "subagent",
+            "subskill",
+            "review",
+            "efficiency"
+          ],
+          "properties": {
+            "outcome": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "planning": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "recovery": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "research": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "subagent": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "subskill": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "review": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "efficiency": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "tasks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/task"
+      }
+    },
+    "profiles": {
+      "type": "object",
+      "required": [
+        "smoke",
+        "full",
+        "holdout"
+      ],
+      "properties": {
+        "smoke": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "full": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "holdout": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "$defs": {
+    "task": {
+      "type": "object",
+      "required": [
+        "task_id",
+        "family",
+        "difficulty",
+        "required_capabilities",
+        "agent_policy",
+        "skill_contract",
+        "research_contract",
+        "loop_contract",
+        "hidden_tests",
+        "scoring_profile"
+      ],
+      "properties": {
+        "task_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "family": {
+          "type": "string",
+          "minLength": 1
+        },
+        "difficulty": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5
+        },
+        "notes": {
+          "type": "string"
+        },
+        "required_capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "agent_policy": {
+          "type": "object",
+          "required": [
+            "external_required",
+            "required_external_phases",
+            "min_reviewers",
+            "fallback_allowed"
+          ],
+          "properties": {
+            "external_required": {
+              "type": "boolean"
+            },
+            "required_external_phases": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            },
+            "min_reviewers": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2
+            },
+            "fallback_allowed": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "skill_contract": {
+          "type": "object",
+          "required": [
+            "must_cover",
+            "forbidden"
+          ],
+          "properties": {
+            "must_cover": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            },
+            "forbidden": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            }
+          },
+          "additionalProperties": false
+        },
+        "research_contract": {
+          "type": "object",
+          "required": [
+            "required_questions",
+            "min_primary_sources",
+            "claim_evidence_required"
+          ],
+          "properties": {
+            "required_questions": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "min_primary_sources": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "claim_evidence_required": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "loop_contract": {
+          "type": "object",
+          "required": [
+            "required_phase_sequence",
+            "exact_phase_sequence",
+            "requires_replan",
+            "requires_recovery",
+            "requires_parallel",
+            "min_parallel_children"
+          ],
+          "properties": {
+            "required_phase_sequence": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "plan",
+                  "implement",
+                  "review"
+                ]
+              },
+              "minItems": 1
+            },
+            "exact_phase_sequence": {
+              "type": "boolean"
+            },
+            "requires_replan": {
+              "type": "boolean"
+            },
+            "requires_recovery": {
+              "type": "boolean"
+            },
+            "requires_parallel": {
+              "type": "boolean"
+            },
+            "min_parallel_children": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 3
+            }
+          },
+          "additionalProperties": false
+        },
+        "hidden_tests": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "scoring_profile": {
+          "type": "object",
+          "required": [
+            "weights"
+          ],
+          "properties": {
+            "weights": {
+              "type": "object",
+              "required": [
+                "outcome",
+                "planning",
+                "recovery",
+                "research",
+                "subagent",
+                "subskill",
+                "review",
+                "efficiency"
+              ],
+              "properties": {
+                "outcome": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                "planning": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                "recovery": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                "research": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                "subagent": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                "subskill": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                "review": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                "efficiency": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 100
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        "eval_case_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

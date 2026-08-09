@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "task-definition.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "task_id": {
+      "$ref": "common.schema.json#/$defs/task_id"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160
+    },
+    "objective": {
+      "type": "string",
+      "minLength": 1
+    },
+    "acceptance_criteria": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "criterion_id": {"type": "string", "minLength": 1},
+          "statement": {"type": "string", "minLength": 1},
+          "validation_method": {"type": "string", "minLength": 1}
+        },
+        "required": ["criterion_id", "statement", "validation_method"]
+      }
+    },
+    "created_at": {
+      "$ref": "common.schema.json#/$defs/timestamp"
+    },
+    "created_by": {
+      "type": "string",
+      "minLength": 1
+    },
+    "target_repository": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "target_repository_identity": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "derived_from_task_id": {
+      "anyOf": [
+        {
+          "$ref": "common.schema.json#/$defs/task_id"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "schema_version",
+    "task_id",
+    "title",
+    "objective",
+    "acceptance_criteria",
+    "created_at",
+    "created_by",
+    "target_repository",
+    "target_repository_identity",
+    "derived_from_task_id"
+  ]
+}

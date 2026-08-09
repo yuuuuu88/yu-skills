@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "remote-state.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "task_id": {
+      "$ref": "common.schema.json#/$defs/task_id"
+    },
+    "repository_identity": {
+      "type": "string"
+    },
+    "remote_name": {
+      "type": "string"
+    },
+    "branch": {
+      "type": "string"
+    },
+    "local_head": {
+      "type": "string"
+    },
+    "remote_head": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "status": {
+      "enum": [
+        "local_only",
+        "synced",
+        "ahead",
+        "behind",
+        "diverged",
+        "unavailable"
+      ]
+    },
+    "verified_at": {
+      "$ref": "common.schema.json#/$defs/timestamp"
+    },
+    "artifact_commit": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "schema_version",
+    "task_id",
+    "repository_identity",
+    "remote_name",
+    "branch",
+    "local_head",
+    "remote_head",
+    "status",
+    "verified_at",
+    "artifact_commit"
+  ]
+}

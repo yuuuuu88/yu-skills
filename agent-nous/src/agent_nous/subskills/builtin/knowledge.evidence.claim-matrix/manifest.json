@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "knowledge.evidence.claim-matrix",
+  "version": "1.0.0",
+  "phase": "knowledge",
+  "core": {
+    "name": "Claim Evidence Matrix",
+    "originator": "Nous independent synthesis",
+    "source_url": "https://www.cdc.gov/healthyyouth/evaluation/pdf/brief3.pdf",
+    "operational_rule": "複数の主張を一つの引用で覆ったことにせず、証拠の射程を超える一般化を検出する。"
+  },
+  "capabilities": [
+    "knowledge.certainty",
+    "knowledge.conflict"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 94,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "fb6de4b180f4eace67057fff8fbf410ebf39139d8b969dfae1afebaa7309c2e3",
+  "guidance_hash": "fbc351626fbc003482ba786b84e8aaa039a87703db2fb1d2f79cc73f78c1078f",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "independent-synthesis"
+  }
+}

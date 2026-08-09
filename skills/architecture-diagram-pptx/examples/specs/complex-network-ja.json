@@ -1,0 +1,807 @@
+{
+  "title": "ハイブリッド業務基盤 ネットワーク全体構成図（高複雑度）",
+  "purpose": "外部利用者から入口・公開領域・アプリ領域・データ領域を経由し、管理・非同期・監視・外部連携へ至る経路を示す",
+  "diagram_type": "network",
+  "audience": "インフラ・セキュリティ・SRE担当者",
+  "canvas": {
+    "width": 13.333,
+    "height": 7.5
+  },
+  "layout": {
+    "direction": "left-to-right",
+    "allow_staggered": true,
+    "allow_high_density": true,
+    "grid": 0.05,
+    "safe_area": {
+      "x": 0.5,
+      "y": 1.25,
+      "w": 12.3,
+      "h": 5.25
+    }
+  },
+  "boundaries": [
+    {
+      "id": "client-zone",
+      "label": "利用者",
+      "node_ids": [
+        "browser"
+      ],
+      "position": {
+        "x": 0.5,
+        "y": 2.75,
+        "w": 1.2,
+        "h": 2.25
+      },
+      "style": {
+        "fill": "F8FAFC",
+        "line": "94A3B8",
+        "line_style": "dashed",
+        "transparency": 8
+      }
+    },
+    {
+      "id": "aws-account",
+      "label": "クラウドアカウント / 東京リージョン",
+      "node_ids": [
+        "cloudfront",
+        "waf",
+        "api",
+        "app-a",
+        "app-b",
+        "db",
+        "cache",
+        "vpn",
+        "bastion",
+        "queue",
+        "worker",
+        "monitor",
+        "log",
+        "payment",
+        "saas"
+      ],
+      "position": {
+        "x": 1.9,
+        "y": 1.35,
+        "w": 10.9,
+        "h": 5.0
+      },
+      "label_position": {
+        "x": 2.05,
+        "y": 1.45,
+        "w": 2.6,
+        "h": 0.2
+      },
+      "style": {
+        "fill": "FFFDF7",
+        "line": "F59E0B",
+        "line_style": "solid",
+        "transparency": 10
+      }
+    },
+    {
+      "id": "edge-zone",
+      "label": "Edge / WAF",
+      "node_ids": [
+        "cloudfront",
+        "waf"
+      ],
+      "position": {
+        "x": 2.0,
+        "y": 1.65,
+        "w": 2.2,
+        "h": 1.65
+      },
+      "label_position": {
+        "x": 2.15,
+        "y": 1.73,
+        "w": 1.0,
+        "h": 0.2
+      },
+      "style": {
+        "fill": "FEF2F2",
+        "line": "FCA5A5",
+        "line_style": "solid",
+        "transparency": 8
+      }
+    },
+    {
+      "id": "public-zone",
+      "label": "Public subnet",
+      "node_ids": [
+        "api"
+      ],
+      "position": {
+        "x": 4.45,
+        "y": 1.65,
+        "w": 2.4,
+        "h": 1.65
+      },
+      "label_position": {
+        "x": 4.6,
+        "y": 1.73,
+        "w": 1.15,
+        "h": 0.2
+      },
+      "style": {
+        "fill": "FFF7ED",
+        "line": "FDBA74",
+        "line_style": "dashed",
+        "transparency": 8
+      }
+    },
+    {
+      "id": "private-app",
+      "label": "Private app",
+      "node_ids": [
+        "app-a",
+        "app-b"
+      ],
+      "position": {
+        "x": 7.1,
+        "y": 1.65,
+        "w": 2.5,
+        "h": 1.65
+      },
+      "label_position": {
+        "x": 7.25,
+        "y": 1.73,
+        "w": 1.0,
+        "h": 0.2
+      },
+      "style": {
+        "fill": "EFF6FF",
+        "line": "93C5FD",
+        "line_style": "solid",
+        "transparency": 8
+      }
+    },
+    {
+      "id": "private-data",
+      "label": "Private data",
+      "node_ids": [
+        "db",
+        "cache"
+      ],
+      "position": {
+        "x": 9.85,
+        "y": 1.65,
+        "w": 2.75,
+        "h": 1.65
+      },
+      "label_position": {
+        "x": 10.0,
+        "y": 1.73,
+        "w": 1.0,
+        "h": 0.2
+      },
+      "style": {
+        "fill": "F0FDF4",
+        "line": "86EFAC",
+        "line_style": "solid",
+        "transparency": 8
+      }
+    },
+    {
+      "id": "management-zone",
+      "label": "管理経路",
+      "node_ids": [
+        "vpn",
+        "bastion"
+      ],
+      "position": {
+        "x": 2.0,
+        "y": 4.15,
+        "w": 2.2,
+        "h": 1.8
+      },
+      "label_position": {
+        "x": 2.1,
+        "y": 4.23,
+        "w": 1.0,
+        "h": 0.2
+      },
+      "style": {
+        "fill": "F5F3FF",
+        "line": "C4B5FD",
+        "line_style": "dashed",
+        "transparency": 8
+      }
+    },
+    {
+      "id": "integration-zone",
+      "label": "非同期処理",
+      "node_ids": [
+        "queue",
+        "worker"
+      ],
+      "position": {
+        "x": 4.45,
+        "y": 4.15,
+        "w": 2.4,
+        "h": 1.8
+      },
+      "label_position": {
+        "x": 4.6,
+        "y": 5.7,
+        "w": 1.0,
+        "h": 0.2
+      },
+      "style": {
+        "fill": "F0FDFA",
+        "line": "5EEAD4",
+        "line_style": "solid",
+        "transparency": 8
+      }
+    },
+    {
+      "id": "observability-zone",
+      "label": "Observability",
+      "node_ids": [
+        "monitor",
+        "log"
+      ],
+      "position": {
+        "x": 7.1,
+        "y": 4.15,
+        "w": 2.5,
+        "h": 1.8
+      },
+      "label_position": {
+        "x": 8.45,
+        "y": 5.7,
+        "w": 1.1,
+        "h": 0.2
+      },
+      "style": {
+        "fill": "F5F3FF",
+        "line": "C4B5FD",
+        "line_style": "dashed",
+        "transparency": 8
+      }
+    },
+    {
+      "id": "external-zone",
+      "label": "外部サービス",
+      "node_ids": [
+        "payment",
+        "saas"
+      ],
+      "position": {
+        "x": 9.85,
+        "y": 4.15,
+        "w": 2.75,
+        "h": 1.8
+      },
+      "label_position": {
+        "x": 11.75,
+        "y": 4.23,
+        "w": 0.65,
+        "h": 0.2
+      },
+      "style": {
+        "fill": "FFF7ED",
+        "line": "FDBA74",
+        "line_style": "dashed",
+        "transparency": 8
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "id": "browser",
+      "label": "利用者ブラウザ",
+      "kind": "application",
+      "icon": "browser",
+      "position": {
+        "x": 0.7,
+        "y": 3.4,
+        "w": 0.9,
+        "h": 0.8
+      }
+    },
+    {
+      "id": "cloudfront",
+      "label": "CDN",
+      "kind": "operations",
+      "icon": "cloud",
+      "position": {
+        "x": 2.1,
+        "y": 2.2,
+        "w": 0.8,
+        "h": 0.8
+      }
+    },
+    {
+      "id": "waf",
+      "label": "AWS WAF",
+      "kind": "security",
+      "icon": "waf",
+      "position": {
+        "x": 3.25,
+        "y": 2.2,
+        "w": 0.8,
+        "h": 0.8
+      },
+      "provider": "aws"
+    },
+    {
+      "id": "api",
+      "label": "API Gateway",
+      "kind": "gateway",
+      "icon": "api-gateway",
+      "position": {
+        "x": 4.65,
+        "y": 2.2,
+        "w": 0.8,
+        "h": 0.8
+      },
+      "provider": "aws"
+    },
+    {
+      "id": "app-a",
+      "label": "注文API",
+      "kind": "service",
+      "icon": "lambda",
+      "position": {
+        "x": 7.25,
+        "y": 2.2,
+        "w": 0.8,
+        "h": 0.8
+      },
+      "provider": "aws"
+    },
+    {
+      "id": "app-b",
+      "label": "照会API",
+      "kind": "service",
+      "icon": "lambda",
+      "position": {
+        "x": 8.6,
+        "y": 2.2,
+        "w": 0.8,
+        "h": 0.8
+      },
+      "provider": "aws"
+    },
+    {
+      "id": "db",
+      "label": "業務DB",
+      "kind": "data-store",
+      "icon": "rds",
+      "position": {
+        "x": 10.05,
+        "y": 2.2,
+        "w": 0.8,
+        "h": 0.8
+      },
+      "provider": "aws"
+    },
+    {
+      "id": "cache",
+      "label": "キャッシュ",
+      "kind": "data-store",
+      "icon": "database",
+      "position": {
+        "x": 11.4,
+        "y": 2.2,
+        "w": 0.8,
+        "h": 0.8
+      }
+    },
+    {
+      "id": "vpn",
+      "label": "VPN Gateway",
+      "kind": "gateway",
+      "icon": "router",
+      "position": {
+        "x": 2.1,
+        "y": 4.75,
+        "w": 0.8,
+        "h": 0.8
+      }
+    },
+    {
+      "id": "bastion",
+      "label": "踏み台",
+      "kind": "service",
+      "icon": "server",
+      "position": {
+        "x": 3.25,
+        "y": 4.75,
+        "w": 0.8,
+        "h": 0.8
+      }
+    },
+    {
+      "id": "queue",
+      "label": "処理キュー",
+      "kind": "queue",
+      "icon": "sqs",
+      "position": {
+        "x": 4.75,
+        "y": 4.75,
+        "w": 0.8,
+        "h": 0.8
+      },
+      "provider": "aws"
+    },
+    {
+      "id": "worker",
+      "label": "Worker",
+      "kind": "service",
+      "icon": "ec2",
+      "position": {
+        "x": 5.9,
+        "y": 4.75,
+        "w": 0.8,
+        "h": 0.8
+      },
+      "provider": "aws"
+    },
+    {
+      "id": "monitor",
+      "label": "監視",
+      "kind": "operations",
+      "icon": "cloudwatch",
+      "position": {
+        "x": 7.35,
+        "y": 4.75,
+        "w": 0.8,
+        "h": 0.8
+      },
+      "provider": "aws"
+    },
+    {
+      "id": "log",
+      "label": "ログ保管",
+      "kind": "data-store",
+      "icon": "storage",
+      "position": {
+        "x": 8.6,
+        "y": 4.75,
+        "w": 0.8,
+        "h": 0.8
+      }
+    },
+    {
+      "id": "payment",
+      "label": "決済SaaS",
+      "kind": "external",
+      "icon": "cloud",
+      "position": {
+        "x": 10.05,
+        "y": 4.75,
+        "w": 0.8,
+        "h": 0.8
+      }
+    },
+    {
+      "id": "saas",
+      "label": "外部業務SaaS",
+      "kind": "external",
+      "icon": "cloud",
+      "position": {
+        "x": 11.4,
+        "y": 4.75,
+        "w": 0.8,
+        "h": 0.8
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "browser-cloudfront",
+      "from": "browser",
+      "to": "cloudfront",
+      "label": "HTTPS",
+      "relation": "data_flow",
+      "line_style": "solid",
+      "from_anchor": "right",
+      "to_anchor": "left",
+      "route": [
+        {
+          "x": 1.85,
+          "y": 3.8
+        },
+        {
+          "x": 1.85,
+          "y": 2.6
+        }
+      ],
+      "label_box": {
+        "x": 1.9,
+        "y": 3.1,
+        "w": 0.42,
+        "h": 0.18
+      }
+    },
+    {
+      "id": "cloudfront-waf",
+      "from": "cloudfront",
+      "to": "waf",
+      "label": "TLS",
+      "relation": "data_flow",
+      "line_style": "solid",
+      "from_anchor": "right",
+      "to_anchor": "left",
+      "label_box": {
+        "x": 2.94,
+        "y": 2.5,
+        "w": 0.32,
+        "h": 0.18
+      }
+    },
+    {
+      "id": "waf-api",
+      "from": "waf",
+      "to": "api",
+      "label": "HTTPS",
+      "relation": "data_flow",
+      "line_style": "solid",
+      "from_anchor": "right",
+      "to_anchor": "left",
+      "label_box": {
+        "x": 4.1,
+        "y": 2.5,
+        "w": 0.42,
+        "h": 0.18
+      }
+    },
+    {
+      "id": "api-app-a",
+      "from": "api",
+      "to": "app-a",
+      "label": "API",
+      "relation": "data_flow",
+      "line_style": "solid",
+      "from_anchor": "right",
+      "to_anchor": "left",
+      "label_box": {
+        "x": 6.15,
+        "y": 2.5,
+        "w": 0.34,
+        "h": 0.18
+      }
+    },
+    {
+      "id": "app-a-app-b",
+      "from": "app-a",
+      "to": "app-b",
+      "label": "内部",
+      "relation": "dependency",
+      "line_style": "dashed",
+      "from_anchor": "right",
+      "to_anchor": "left",
+      "label_box": {
+        "x": 8.2,
+        "y": 2.5,
+        "w": 0.34,
+        "h": 0.18
+      }
+    },
+    {
+      "id": "app-b-db",
+      "from": "app-b",
+      "to": "db",
+      "label": "SQL",
+      "relation": "data_flow",
+      "line_style": "solid",
+      "from_anchor": "right",
+      "to_anchor": "left",
+      "label_box": {
+        "x": 9.55,
+        "y": 2.5,
+        "w": 0.34,
+        "h": 0.18
+      }
+    },
+    {
+      "id": "db-cache",
+      "from": "db",
+      "to": "cache",
+      "label": "複製",
+      "relation": "data_flow",
+      "line_style": "solid",
+      "from_anchor": "right",
+      "to_anchor": "left",
+      "label_box": {
+        "x": 11.0,
+        "y": 2.5,
+        "w": 0.34,
+        "h": 0.18
+      }
+    },
+    {
+      "id": "app-a-queue",
+      "from": "app-a",
+      "to": "queue",
+      "label": "イベント",
+      "relation": "message",
+      "line_style": "solid",
+      "from_anchor": "bottom",
+      "to_anchor": "top",
+      "route": [
+        {
+          "x": 7.65,
+          "y": 3.45
+        },
+        {
+          "x": 5.15,
+          "y": 3.45
+        },
+        {
+          "x": 5.15,
+          "y": 4.75
+        }
+      ],
+      "label_box": {
+        "x": 6.1,
+        "y": 3.28,
+        "w": 0.55,
+        "h": 0.18
+      }
+    },
+    {
+      "id": "queue-worker",
+      "from": "queue",
+      "to": "worker",
+      "label": "ジョブ",
+      "relation": "message",
+      "line_style": "solid",
+      "from_anchor": "right",
+      "to_anchor": "left",
+      "label_box": {
+        "x": 5.57,
+        "y": 5.0,
+        "w": 0.34,
+        "h": 0.18
+      }
+    },
+    {
+      "id": "app-b-monitor",
+      "from": "app-b",
+      "to": "monitor",
+      "label": "監視",
+      "relation": "monitoring",
+      "line_style": "dotted",
+      "from_anchor": "bottom",
+      "to_anchor": "top",
+      "route": [
+        {
+          "x": 9.0,
+          "y": 3.75
+        },
+        {
+          "x": 7.75,
+          "y": 3.75
+        }
+      ],
+      "label_box": {
+        "x": 8.15,
+        "y": 3.58,
+        "w": 0.42,
+        "h": 0.18
+      }
+    },
+    {
+      "id": "monitor-log",
+      "from": "monitor",
+      "to": "log",
+      "label": "ログ",
+      "relation": "monitoring",
+      "line_style": "dotted",
+      "from_anchor": "right",
+      "to_anchor": "left",
+      "label_box": {
+        "x": 8.2,
+        "y": 5.0,
+        "w": 0.32,
+        "h": 0.18
+      }
+    },
+    {
+      "id": "db-payment",
+      "from": "db",
+      "to": "payment",
+      "label": "決済",
+      "relation": "data_flow",
+      "line_style": "solid",
+      "from_anchor": "bottom",
+      "to_anchor": "top",
+      "route": [
+        {
+          "x": 10.45,
+          "y": 3.95
+        }
+      ],
+      "label_box": {
+        "x": 10.58,
+        "y": 3.78,
+        "w": 0.34,
+        "h": 0.18
+      }
+    },
+    {
+      "id": "payment-saas",
+      "from": "payment",
+      "to": "saas",
+      "label": "連携",
+      "relation": "data_flow",
+      "line_style": "solid",
+      "from_anchor": "right",
+      "to_anchor": "left",
+      "label_box": {
+        "x": 10.95,
+        "y": 5.0,
+        "w": 0.34,
+        "h": 0.18
+      }
+    },
+    {
+      "id": "vpn-bastion",
+      "from": "vpn",
+      "to": "bastion",
+      "label": "管理",
+      "relation": "dependency",
+      "line_style": "dashed",
+      "from_anchor": "right",
+      "to_anchor": "left",
+      "label_box": {
+        "x": 2.92,
+        "y": 5.0,
+        "w": 0.34,
+        "h": 0.18
+      }
+    },
+    {
+      "id": "bastion-app-a",
+      "from": "bastion",
+      "to": "app-a",
+      "label": "管理操作",
+      "relation": "dependency",
+      "line_style": "dashed",
+      "from_anchor": "top",
+      "to_anchor": "bottom",
+      "route": [
+        {
+          "x": 3.65,
+          "y": 3.15
+        },
+        {
+          "x": 7.65,
+          "y": 3.15
+        }
+      ],
+      "label_box": {
+        "x": 5.55,
+        "y": 3.0,
+        "w": 0.62,
+        "h": 0.18
+      }
+    }
+  ],
+  "legend_relations": [
+    "data_flow",
+    "message",
+    "dependency",
+    "monitoring"
+  ],
+  "annotations": [
+    {
+      "id": "scope",
+      "text": "高複雑度の例。実際のサブネット、ルートテーブル、FWルール、冗長化は別設計で確定する。",
+      "position": {
+        "x": 0.6,
+        "y": 6.92,
+        "w": 11.8,
+        "h": 0.18
+      }
+    }
+  ],
+  "metadata": {
+    "version": "0.4.0",
+    "updated_at": "2026-08-09",
+    "author": "architecture-diagram-pptx complexity validation",
+    "assets": "AWS official icons plus generic concept icons"
+  }
+}

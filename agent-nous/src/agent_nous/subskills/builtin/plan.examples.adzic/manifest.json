@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "plan.examples.adzic",
+  "version": "1.0.0",
+  "phase": "plan",
+  "core": {
+    "name": "Specification by Example",
+    "originator": "Gojko Adzic",
+    "source_url": "https://gojko.net/books/specification-by-example/",
+    "operational_rule": "Turn acceptance conditions into representative, boundary, and counter examples connected to executable checks."
+  },
+  "capabilities": [
+    "plan.acceptance",
+    "plan.examples"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 70,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "73ac3776247ec43777415de90d4fa9f6b41edd9c6080398dc5e4750808392e40",
+  "guidance_hash": "db158d66ff8e31d518ab1d04164a6fdc05033f13b354c4528c73f1d36ec9039f",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "curated-guidance"
+  }
+}

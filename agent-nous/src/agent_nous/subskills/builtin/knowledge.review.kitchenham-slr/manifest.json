@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "knowledge.review.kitchenham-slr",
+  "version": "1.0.0",
+  "phase": "knowledge",
+  "core": {
+    "name": "Software Engineering SLR",
+    "originator": "Barbara Kitchenham and Stuart Charters",
+    "source_url": "https://ebse.webspace.durham.ac.uk/ebse-bibliography/guidelines-for-performing-systematic-literature-reviews-in-software-engineering/",
+    "operational_rule": "Predeclare research questions, search strategy, sources, and inclusion criteria for broad technical research."
+  },
+  "capabilities": [
+    "knowledge.systematic-review",
+    "knowledge.protocol"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 80,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "436439f60376476dc902bbb26997b6de0518807a9a4419f4b6df89bd1eb59517",
+  "guidance_hash": "509d5ee48211ed8c69118ef2efaceca03604252f99490d178882323afa12668b",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "curated-guidance"
+  }
+}

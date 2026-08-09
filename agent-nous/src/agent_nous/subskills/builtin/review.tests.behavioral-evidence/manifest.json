@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "review.tests.behavioral-evidence",
+  "version": "1.0.0",
+  "phase": "review",
+  "core": {
+    "name": "Behavioral Test Evidence",
+    "originator": "Nous independent synthesis",
+    "source_url": "https://martinfowler.com/articles/practical-test-pyramid.html",
+    "operational_rule": "実装詳細に密着した脆いテストを増やさず、失敗したときに原因が分かる検証を優先する。"
+  },
+  "capabilities": [
+    "review.test-quality",
+    "review.independence"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 91,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "92c01b94dc9f14f9d313f4c6911d1c93ccd33eb29914884e92624b27f8c80364",
+  "guidance_hash": "5c7748bc18bf474e84081a7d12f86f4c4303e96dafa525b6c76c5a626beb5ead",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "independent-synthesis"
+  }
+}

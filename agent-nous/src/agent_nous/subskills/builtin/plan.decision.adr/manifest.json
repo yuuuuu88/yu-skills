@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "plan.decision.adr",
+  "version": "1.0.0",
+  "phase": "plan",
+  "core": {
+    "name": "Decision Record",
+    "originator": "Nous independent synthesis",
+    "source_url": "https://adr.github.io/",
+    "operational_rule": "結論だけでなく、当時の制約と却下した選択肢を残し、条件が変わったときだけ再判断する。"
+  },
+  "capabilities": [
+    "plan.decisions",
+    "plan.acceptance"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 93,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "f7ca2f29a045421cab3d3c0889b4104a27731dad2acfa9ceddbd80a5b2f11937",
+  "guidance_hash": "911f9c7f99a477adbad0794cf4b562834d75d8bfc88c3177ef11ee88d72f093f",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "independent-synthesis"
+  }
+}

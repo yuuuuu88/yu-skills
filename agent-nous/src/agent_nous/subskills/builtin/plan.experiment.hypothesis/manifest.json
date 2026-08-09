@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "plan.experiment.hypothesis",
+  "version": "1.0.0",
+  "phase": "plan",
+  "core": {
+    "name": "Hypothesis Experiment",
+    "originator": "Nous independent synthesis",
+    "source_url": "https://leanstartup.co/",
+    "operational_rule": "実験の成功条件を先に定め、結果が悪い場合の方向転換・撤退条件も同じPlanに書く。"
+  },
+  "capabilities": [
+    "plan.experiment",
+    "plan.acceptance"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 91,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "923f33bc388a3ab0246988c41ad619473c5eff3f4deadf871bec41baa71c4802",
+  "guidance_hash": "4ef90159aff69a706dc51f30fc240fe9d59820e1db35fbc6804aa6603b460a54",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "independent-synthesis"
+  }
+}

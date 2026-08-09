@@ -1,0 +1,6 @@
+interface:
+  display_name: "nous"
+  short_description: "調査から実装・レビュー・再開まで自律管理するタスク実行エージェント"
+  default_prompt: "Use $nous to research, plan, implement, review, and durably manage this task through completion."
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,27 @@
+{
+  "title": "遠すぎる経路ラベル",
+  "purpose": "経路から離れたラベルを検知する",
+  "diagram_type": "network",
+  "audience": "テスト担当者",
+  "canvas": {"width": 13.333, "height": 7.5},
+  "layout": {"direction": "left-to-right", "grid": 0.25, "safe_area": {"x": 0.5, "y": 1.25, "w": 12.3, "h": 5.25}},
+  "nodes": [
+    {"id": "source", "label": "入口", "kind": "service", "position": {"x": 1.0, "y": 3.0, "w": 1.25, "h": 1.0}},
+    {"id": "target", "label": "保存先", "kind": "data-store", "position": {"x": 5.0, "y": 3.0, "w": 1.25, "h": 1.0}}
+  ],
+  "edges": [
+    {
+      "id": "far-label",
+      "from": "source",
+      "to": "target",
+      "label": "HTTPS",
+      "relation": "data_flow",
+      "from_anchor": "right",
+      "to_anchor": "left",
+      "label_box": {"x": 2.5, "y": 1.25, "w": 0.6, "h": 0.2}
+    }
+  ],
+  "legend_relations": ["data_flow"],
+  "expect": "fail",
+  "failure_kind": "edge label distance"
+}

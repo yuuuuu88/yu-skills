@@ -1,0 +1,16 @@
+{
+  "title": "長いラベルでもアイコンを主役にする",
+  "purpose": "詳細説明を詰め込まず、アイコンと短い役割ラベルを優先する",
+  "diagram_type": "container",
+  "audience": "テスト",
+  "canvas": {"width": 13.333, "height": 7.5},
+  "layout": {"direction":"left-to-right","grid":0.25,"safe_area":{"x":0.5,"y":1.1,"w":12.3,"h":5.35}},
+  "nodes": [
+    {"id":"long","label":"非常に長い製品名を入れた場合でもアイコンを見失わないためのサンプル","kind":"service","icon":"server","role":"説明は短くして詳細は別スライドへ","position":{"x":4.0,"y":3.0,"w":2.2,"h":1.0}},
+    {"id":"data","label":"DB","kind":"data-store","icon":"database","position":{"x":9.0,"y":3.0,"w":1.5,"h":1.0}}
+  ],
+  "edges":[{"id":"long-data","from":"long","to":"data","label":"保存","relation":"data_flow","from_anchor":"right","to_anchor":"left"}],
+  "legend_relations":["data_flow"],
+  "expect_warning":"label",
+  "metadata":{"version":"0.4.0","updated_at":"2026-08-09"}
+}

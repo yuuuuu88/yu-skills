@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "review.prose.fact-preservation",
+  "version": "1.0.0",
+  "phase": "review",
+  "core": {
+    "name": "Japanese Fact Preservation",
+    "originator": "Nous independent synthesis",
+    "source_url": "https://jtca.org/learn-tc/publication/guide_jsg/",
+    "operational_rule": "読みやすい言い換えをしても、根拠のない補足・断定・主語の変更を加えない。"
+  },
+  "capabilities": [
+    "review.factuality",
+    "review.independence"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 96,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "ff9efdcf2c1b28394b90f78fae7c185c2e3d0bb38ca5647a7892f2722f180447",
+  "guidance_hash": "2fa5827b6d7a2f65ec967664451845f112e6f28fff628547d789c319f75e533c",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "independent-synthesis"
+  }
+}

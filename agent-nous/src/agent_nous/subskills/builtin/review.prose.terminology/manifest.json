@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "review.prose.terminology",
+  "version": "1.0.0",
+  "phase": "review",
+  "core": {
+    "name": "Terminology and Notation Review",
+    "originator": "Nous curated guidance",
+    "source_url": "https://github.com/prh/prh",
+    "operational_rule": "Use project terminology and notation rules before general language preferences, and report unresolved terms instead of inventing replacements."
+  },
+  "capabilities": [
+    "review.terminology",
+    "review.consistency"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 84,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "11aadc8410c487bcbe3ab311eb0c90e9c5b17139b6fa26fbe8e547375feade25",
+  "guidance_hash": "b2eb02eee004d75da105ac4c5cde17589d8d8ac029cc3b2aa84051cca00cba2e",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "curated-guidance"
+  }
+}

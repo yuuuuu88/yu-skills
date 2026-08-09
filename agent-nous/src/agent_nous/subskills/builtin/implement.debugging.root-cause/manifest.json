@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "implement.debugging.root-cause",
+  "version": "1.0.0",
+  "phase": "implement",
+  "core": {
+    "name": "Root-Cause Debugging",
+    "originator": "Nous independent synthesis",
+    "source_url": "https://sre.google/sre-book/monitoring-distributed-systems/",
+    "operational_rule": "ログや推測だけで原因を断定せず、反証可能な観測を追加して一つずつ仮説を潰す。"
+  },
+  "capabilities": [
+    "implement.debugging",
+    "implement.incremental"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 95,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "20aabf0e91903cfd6bcb79e18cc6f5d1e6a2c4d512ea9da95853b6b9fa5a3706",
+  "guidance_hash": "7f92226efa07fde47b4c038c662704c37bdf15c2a8f86e67972db0671d0f41d7",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "independent-synthesis"
+  }
+}

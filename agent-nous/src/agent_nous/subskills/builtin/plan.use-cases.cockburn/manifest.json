@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "plan.use-cases.cockburn",
+  "version": "1.0.0",
+  "phase": "plan",
+  "core": {
+    "name": "Writing Effective Use Cases",
+    "originator": "Alistair Cockburn",
+    "source_url": "https://alistaircockburn.com/Books",
+    "operational_rule": "Describe actor goal, preconditions, success path, and alternate or failure paths before UI details."
+  },
+  "capabilities": [
+    "plan.use-cases",
+    "plan.exceptions"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 90,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "cd23df5c9015e6dcecd1ab6d5a8c25fd1dc078f64f04e489a896f72cf82237d2",
+  "guidance_hash": "64867ffd5a2fbbe11793400633eca75daa2fe594d725eb34390d8dc29efe3212",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "curated-guidance"
+  }
+}

@@ -1,0 +1,546 @@
+{
+  "title": "注文処理サービス AWS 全体構成図（例）",
+  "purpose": "利用者の注文リクエストがAWSの入口・同期処理・非同期処理・データストアを通り、監視される全体像を示す",
+  "diagram_type": "deployment",
+  "audience": "クラウド設計・開発・運用担当者",
+  "canvas": {
+    "width": 13.333,
+    "height": 7.5
+  },
+  "layout": {
+    "direction": "left-to-right",
+    "allow_staggered": true,
+    "grid": 0.25,
+    "safe_area": {
+      "x": 0.5,
+      "y": 1.25,
+      "w": 12.3,
+      "h": 5.25
+    }
+  },
+  "boundaries": [
+    {
+      "id": "client-zone",
+      "label": "利用者",
+      "node_ids": ["browser"],
+      "position": {
+        "x": 0.5,
+        "y": 2.5,
+        "w": 1.35,
+        "h": 2.5
+      },
+      "style": {
+        "fill": "F8FAFC",
+        "line": "94A3B8",
+        "line_style": "dashed",
+        "transparency": 8
+      }
+    },
+    {
+      "id": "aws-account",
+      "label": "AWSアカウント / 東京リージョン",
+      "node_ids": [
+        "waf",
+        "api-gateway",
+        "lambda",
+        "iam",
+        "dynamodb",
+        "s3",
+        "cloudwatch",
+        "sqs",
+        "ec2",
+        "rds"
+      ],
+      "position": {
+        "x": 2.0,
+        "y": 1.25,
+        "w": 10.85,
+        "h": 5.0
+      },
+      "style": {
+        "fill": "FFFDF7",
+        "line": "F59E0B",
+        "line_style": "solid",
+        "transparency": 10
+      }
+    },
+    {
+      "id": "permission-zone",
+      "label": "権限",
+      "node_ids": ["iam"],
+      "position": {
+        "x": 3.75,
+        "y": 1.55,
+        "w": 1.75,
+        "h": 1.45
+      },
+      "label_position": {
+        "x": 3.9,
+        "y": 1.62,
+        "w": 0.65,
+        "h": 0.25
+      },
+      "style": {
+        "fill": "F5F3FF",
+        "line": "C4B5FD",
+        "line_style": "dashed",
+        "transparency": 8
+      }
+    },
+    {
+      "id": "data-zone",
+      "label": "共有データ",
+      "node_ids": ["dynamodb", "s3", "cloudwatch"],
+      "position": {
+        "x": 7.45,
+        "y": 1.55,
+        "w": 5.05,
+        "h": 1.45
+      },
+      "label_position": {
+        "x": 7.6,
+        "y": 1.62,
+        "w": 1.2,
+        "h": 0.25
+      },
+      "style": {
+        "fill": "F0FDF4",
+        "line": "86EFAC",
+        "line_style": "solid",
+        "transparency": 8
+      }
+    },
+    {
+      "id": "request-zone",
+      "label": "入口・同期処理",
+      "node_ids": ["waf", "api-gateway", "lambda"],
+      "position": {
+        "x": 2.1,
+        "y": 3.2,
+        "w": 5.15,
+        "h": 1.55
+      },
+      "label_position": {
+        "x": 2.25,
+        "y": 3.28,
+        "w": 1.8,
+        "h": 0.18
+      },
+      "style": {
+        "fill": "EFF6FF",
+        "line": "93C5FD",
+        "line_style": "solid",
+        "transparency": 8
+      }
+    },
+    {
+      "id": "batch-zone",
+      "label": "非同期・バッチ処理",
+      "node_ids": ["sqs", "ec2", "rds"],
+      "position": {
+        "x": 7.45,
+        "y": 4.75,
+        "w": 5.05,
+        "h": 1.5
+      },
+      "label_position": {
+        "x": 7.6,
+        "y": 4.83,
+        "w": 1.8,
+        "h": 0.18
+      },
+      "style": {
+        "fill": "F0FDFA",
+        "line": "5EEAD4",
+        "line_style": "solid",
+        "transparency": 8
+      }
+    },
+    {
+      "id": "private-vpc",
+      "label": "VPC",
+      "node_ids": ["ec2", "rds"],
+      "position": {
+        "x": 9.0,
+        "y": 5.0,
+        "w": 3.3,
+        "h": 1.25
+      },
+      "label_position": {
+        "x": 9.05,
+        "y": 5.04,
+        "w": 0.4,
+        "h": 0.18
+      },
+      "style": {
+        "fill": "F8FAFC",
+        "line": "94A3B8",
+        "line_style": "dashed",
+        "transparency": 18
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "id": "browser",
+      "label": "利用者ブラウザ",
+      "kind": "application",
+      "icon": "browser",
+      "role": "注文を送信",
+      "position": {
+        "x": 0.75,
+        "y": 3.5,
+        "w": 1.0,
+        "h": 1.0
+      }
+    },
+    {
+      "id": "waf",
+      "label": "AWS WAF",
+      "kind": "security",
+      "provider": "aws",
+      "icon": "waf",
+      "role": "入口の防御",
+      "position": {
+        "x": 2.25,
+        "y": 3.5,
+        "w": 1.25,
+        "h": 1.0
+      }
+    },
+    {
+      "id": "api-gateway",
+      "label": "API Gateway",
+      "kind": "gateway",
+      "provider": "aws",
+      "icon": "api-gateway",
+      "role": "API入口",
+      "position": {
+        "x": 4.0,
+        "y": 3.5,
+        "w": 1.25,
+        "h": 1.0
+      }
+    },
+    {
+      "id": "lambda",
+      "label": "Lambda",
+      "kind": "service",
+      "provider": "aws",
+      "icon": "lambda",
+      "role": "注文受付",
+      "position": {
+        "x": 5.75,
+        "y": 3.5,
+        "w": 1.25,
+        "h": 1.0
+      }
+    },
+    {
+      "id": "iam",
+      "label": "IAM",
+      "kind": "identity",
+      "provider": "aws",
+      "icon": "iam",
+      "role": "実行権限",
+      "position": {
+        "x": 4.0,
+        "y": 2.0,
+        "w": 1.25,
+        "h": 1.0
+      }
+    },
+    {
+      "id": "dynamodb",
+      "label": "DynamoDB",
+      "kind": "data-store",
+      "provider": "aws",
+      "icon": "dynamodb",
+      "role": "注文状態",
+      "position": {
+        "x": 7.5,
+        "y": 2.0,
+        "w": 1.25,
+        "h": 1.0
+      }
+    },
+    {
+      "id": "s3",
+      "label": "Amazon S3",
+      "kind": "data-store",
+      "provider": "aws",
+      "icon": "s3",
+      "role": "帳票・成果物",
+      "position": {
+        "x": 9.25,
+        "y": 2.0,
+        "w": 1.25,
+        "h": 1.0
+      }
+    },
+    {
+      "id": "cloudwatch",
+      "label": "CloudWatch",
+      "kind": "operations",
+      "provider": "aws",
+      "icon": "cloudwatch",
+      "role": "ログ・メトリクス",
+      "position": {
+        "x": 11.0,
+        "y": 2.0,
+        "w": 1.25,
+        "h": 1.0
+      }
+    },
+    {
+      "id": "sqs",
+      "label": "Amazon SQS",
+      "kind": "queue",
+      "provider": "aws",
+      "icon": "sqs",
+      "role": "注文イベント",
+      "position": {
+        "x": 7.5,
+        "y": 5.25,
+        "w": 1.25,
+        "h": 1.0
+      }
+    },
+    {
+      "id": "ec2",
+      "label": "EC2 Worker",
+      "kind": "service",
+      "provider": "aws",
+      "icon": "ec2",
+      "role": "バッチ処理",
+      "position": {
+        "x": 9.25,
+        "y": 5.25,
+        "w": 1.25,
+        "h": 1.0
+      }
+    },
+    {
+      "id": "rds",
+      "label": "Amazon RDS",
+      "kind": "data-store",
+      "provider": "aws",
+      "icon": "rds",
+      "role": "業務DB",
+      "position": {
+        "x": 11.0,
+        "y": 5.25,
+        "w": 1.25,
+        "h": 1.0
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "browser-waf",
+      "from": "browser",
+      "to": "waf",
+      "label": "HTTPS",
+      "relation": "data_flow",
+      "line_style": "solid",
+      "from_anchor": "right",
+      "to_anchor": "left",
+      "label_box": {
+        "x": 1.77,
+        "y": 3.9,
+        "w": 0.46,
+        "h": 0.2
+      }
+    },
+    {
+      "id": "waf-api-gateway",
+      "from": "waf",
+      "to": "api-gateway",
+      "label": "HTTPS",
+      "relation": "data_flow",
+      "line_style": "solid",
+      "from_anchor": "right",
+      "to_anchor": "left",
+      "label_box": {
+        "x": 3.52,
+        "y": 3.9,
+        "w": 0.46,
+        "h": 0.2
+      }
+    },
+    {
+      "id": "api-gateway-lambda",
+      "from": "api-gateway",
+      "to": "lambda",
+      "label": "Invoke",
+      "relation": "data_flow",
+      "line_style": "solid",
+      "from_anchor": "right",
+      "to_anchor": "left",
+      "label_box": {
+        "x": 5.28,
+        "y": 3.9,
+        "w": 0.44,
+        "h": 0.2
+      }
+    },
+    {
+      "id": "lambda-dynamodb",
+      "from": "lambda",
+      "to": "dynamodb",
+      "label": "注文状態を保存",
+      "relation": "data_flow",
+      "line_style": "solid",
+      "from_anchor": "top",
+      "to_anchor": "bottom",
+      "route": [
+        {"x": 6.375, "y": 3.35},
+        {"x": 8.125, "y": 3.35}
+      ],
+      "label_box": {
+        "x": 7.45,
+        "y": 3.04,
+        "w": 1.15,
+        "h": 0.18
+      }
+    },
+    {
+      "id": "lambda-sqs",
+      "from": "lambda",
+      "to": "sqs",
+      "label": "注文イベントを発行",
+      "relation": "message",
+      "line_style": "solid",
+      "from_anchor": "right",
+      "to_anchor": "left",
+      "route": [
+        {"x": 7.35, "y": 4.0},
+        {"x": 7.35, "y": 5.75}
+      ],
+      "label_box": {
+        "x": 7.0,
+        "y": 3.76,
+        "w": 1.35,
+        "h": 0.2
+      }
+    },
+    {
+      "id": "sqs-ec2",
+      "from": "sqs",
+      "to": "ec2",
+      "label": "取り出し",
+      "relation": "message",
+      "line_style": "solid",
+      "from_anchor": "right",
+      "to_anchor": "left",
+      "label_box": {
+        "x": 8.79,
+        "y": 5.61,
+        "w": 0.42,
+        "h": 0.2
+      }
+    },
+    {
+      "id": "ec2-rds",
+      "from": "ec2",
+      "to": "rds",
+      "label": "SQL",
+      "relation": "data_flow",
+      "line_style": "solid",
+      "from_anchor": "right",
+      "to_anchor": "left",
+      "label_box": {
+        "x": 10.52,
+        "y": 5.61,
+        "w": 0.46,
+        "h": 0.22
+      }
+    },
+    {
+      "id": "ec2-s3",
+      "from": "ec2",
+      "to": "s3",
+      "label": "帳票を保存",
+      "relation": "data_flow",
+      "line_style": "solid",
+      "from_anchor": "top",
+      "to_anchor": "bottom",
+      "route": [
+        {"x": 10.625, "y": 5.25},
+        {"x": 10.625, "y": 3.15},
+        {"x": 9.875, "y": 3.15}
+      ],
+      "label_box": {
+        "x": 9.65,
+        "y": 3.18,
+        "w": 0.95,
+        "h": 0.25
+      }
+    },
+    {
+      "id": "iam-lambda",
+      "from": "iam",
+      "to": "lambda",
+      "label": "実行ロールを付与",
+      "relation": "dependency",
+      "line_style": "dashed",
+      "from_anchor": "right",
+      "to_anchor": "left",
+      "route": [
+        {"x": 5.6, "y": 2.5},
+        {"x": 5.6, "y": 3.25},
+        {"x": 6.375, "y": 3.25}
+      ],
+      "to_anchor": "top",
+      "label_box": {
+        "x": 5.35,
+        "y": 2.9,
+        "w": 1.25,
+        "h": 0.25
+      }
+    },
+    {
+      "id": "lambda-cloudwatch",
+      "from": "lambda",
+      "to": "cloudwatch",
+      "label": "ログ・メトリクス",
+      "relation": "monitoring",
+      "line_style": "dotted",
+      "from_anchor": "top",
+      "to_anchor": "left",
+      "route": [
+        {"x": 6.375, "y": 3.35},
+        {"x": 9.0, "y": 3.35},
+        {"x": 9.0, "y": 1.3},
+        {"x": 10.75, "y": 1.3},
+        {"x": 10.75, "y": 2.5}
+      ],
+      "label_box": {
+        "x": 9.6,
+        "y": 1.02,
+        "w": 1.35,
+        "h": 0.2
+      }
+    }
+  ],
+  "legend_relations": ["data_flow", "message", "dependency", "monitoring"],
+  "annotations": [
+    {
+      "id": "assumption",
+      "text": "例示構成。WAF／API Gatewayは公開エッジ、EC2 Worker／RDSはVPC内。実際のサブネット、ルート、冗長化、IAMポリシーは別設計で確定する。",
+      "position": {
+        "x": 0.6,
+        "y": 6.92,
+        "w": 12.0,
+        "h": 0.18
+      }
+    }
+  ],
+  "metadata": {
+    "version": "0.5.0",
+    "updated_at": "2026-08-09",
+    "author": "architecture-diagram-pptx example",
+    "assets": "Lucide generic browser + official AWS Architecture Icons",
+    "note": "AWS公式サービスアイコンは実在サービスを表す箇所だけに使用"
+  }
+}

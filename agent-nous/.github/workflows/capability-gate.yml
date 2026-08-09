@@ -1,0 +1,29 @@
+name: Capability gate
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  capability-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install package
+        run: python -m pip install --upgrade pip && python -m pip install -e .
+      - name: Validate capability contract
+        run: nous eval capability-validate
+      - name: Run public deterministic full suite
+        id: capability
+        shell: bash
+        run: |
+          result="$(nous eval capability-full --root "$RUNNER_TEMP/nous-capability")"
+          printf '%s\n' "$result"
+          run_id="$(printf '%s' "$result" | python -c 'import json,sys; print(json.load(sys.stdin)["result"]["run_id"])')"
+          echo "report=$RUNNER_TEMP/nous-capability/runs/$run_id/report.json" >> "$GITHUB_OUTPUT"
+      - name: Apply release thresholds
+        run: python scripts/nous_capability_gate.py --report "${{ steps.capability.outputs.report }}" --config examples/capability-gate.example.json

@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "plan.observability.evidence",
+  "version": "1.0.0",
+  "phase": "plan",
+  "core": {
+    "name": "Observability Evidence Planning",
+    "originator": "Nous independent synthesis",
+    "source_url": "https://opentelemetry.io/docs/concepts/semantic-conventions/",
+    "operational_rule": "観測値の名前と意味を固定し、正常系・失敗系・保持期間・閲覧権限まで受入条件にする。"
+  },
+  "capabilities": [
+    "plan.acceptance",
+    "plan.observability"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 85,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "7b6a790cb87e7d850d68b274801e78cee6142b3f639145d8b075c4a4d0b8eb03",
+  "guidance_hash": "2d0f5dd4142e91cdb6c427a60aa18ac5c9343cf6f3f8da595a07dc612d0460af",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "independent-synthesis"
+  }
+}

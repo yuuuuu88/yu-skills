@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "subskill-manifest.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(-((0|[1-9][0-9]*|[A-Za-z-][0-9A-Za-z-]*)(\\.(0|[1-9][0-9]*|[A-Za-z-][0-9A-Za-z-]*))*))?(\\+[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?$"
+    },
+    "phase": {
+      "enum": [
+        "knowledge",
+        "plan",
+        "implement",
+        "review"
+      ]
+    },
+    "core": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "originator": {
+          "type": "string"
+        },
+        "source_url": {
+          "type": "string"
+        },
+        "operational_rule": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "originator",
+        "source_url",
+        "operational_rule"
+      ]
+    },
+    "capabilities": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "roles": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "primary",
+          "advisor",
+          "validator"
+        ]
+      }
+    },
+    "priority": {
+      "type": "integer"
+    },
+    "enabled": {
+      "type": "boolean"
+    },
+    "entrypoint": {
+      "type": "string"
+    },
+    "content_hash": {
+      "type": "string"
+    },
+    "guidance_hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_type": {"type": "string"},
+        "license_status": {"type": "string"},
+        "source_revision": {"type": "string"},
+        "reviewed_at": {"type": "string"},
+        "transformation": {"type": "string"}
+      },
+      "required": ["source_type", "license_status", "source_revision", "reviewed_at", "transformation"]
+    }
+  },
+  "required": [
+    "schema_version",
+    "id",
+    "version",
+    "phase",
+    "core",
+    "capabilities",
+    "roles",
+    "priority",
+    "enabled",
+    "entrypoint",
+    "content_hash"
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "title": "失敗検知用の過密な構成図",
+  "purpose": "レイアウトチェッカーが崩れを検知できることを確認する",
+  "diagram_type": "network",
+  "audience": "テスト担当者",
+  "expect": "fail",
+  "canvas": {"width": 13.333, "height": 7.5},
+  "layout": {"direction": "left-to-right", "grid": 0.25, "safe_area": {"x": 0.45, "y": 1.1, "w": 12.4, "h": 5.35}},
+  "nodes": [
+    {"id": "a", "label": "利用者と長い説明文を詰め込んだ箱", "kind": "application", "position": {"x": 0.7, "y": 2.0, "w": 0.8, "h": 2.2}},
+    {"id": "b", "label": "WAF", "kind": "security", "position": {"x": 2.0, "y": 2.8, "w": 1.2, "h": 0.8}},
+    {"id": "c", "label": "API", "kind": "application", "position": {"x": 4.0, "y": 3.7, "w": 1.2, "h": 0.8}},
+    {"id": "d", "label": "DB", "kind": "data-store", "position": {"x": 6.0, "y": 2.8, "w": 1.2, "h": 0.8}},
+    {"id": "e", "label": "監視", "kind": "operations", "position": {"x": 8.0, "y": 3.7, "w": 1.2, "h": 0.8}}
+  ],
+  "edges": [
+    {"id": "ab", "from": "a", "to": "b", "label": "最短経路", "style": "solid"},
+    {"id": "bc", "from": "b", "to": "c", "label": "斜め", "style": "solid"},
+    {"id": "cd", "from": "c", "to": "d", "label": "交差", "style": "solid"},
+    {"id": "de", "from": "d", "to": "e", "label": "監視", "style": "solid"}
+  ],
+  "metadata": {"version": "0.2.0", "updated_at": "2026-08-09", "author": "fixture", "assets": "none"}
+}

@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "review.code.connascence",
+  "version": "1.0.0",
+  "phase": "review",
+  "core": {
+    "name": "Connascence",
+    "originator": "Meilir Page-Jones",
+    "source_url": "https://connascence.io/pages/about.html",
+    "operational_rule": "Classify dependencies by kind, strength, locality, and degree; localize strong dependencies and weaken distant ones."
+  },
+  "capabilities": [
+    "review.coupling",
+    "review.change-impact"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 100,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "611043c4bb788a66da676217f609d8805848251f1c06a56cf19ae66cad034d16",
+  "guidance_hash": "ea646d5dc7ec4922fa81cee49688573449db12fdcc9999bbf0a34b8d266e95b6",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "curated-guidance"
+  }
+}

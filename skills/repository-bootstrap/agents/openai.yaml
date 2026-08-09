@@ -1,0 +1,4 @@
+interface:
+  display_name: "Repository Bootstrap"
+  short_description: "Scaffold repositories and start design docs"
+  default_prompt: "Use $repository-bootstrap to initialize this repository structure, project rules, and design documents before implementation."

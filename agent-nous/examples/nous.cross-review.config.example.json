@@ -1,0 +1,41 @@
+{
+  "nous_home": "~/.local/share/nous",
+  "engine": {
+    "agents": {
+      "plan": "python3 .nous/agents/plan.py",
+      "implement": "python3 .nous/agents/implement.py",
+      "review": "python3 .nous/agents/review.py"
+    },
+    "review": {
+      "mode": "cross",
+      "fallback": "single",
+      "max_parallel": 2,
+      "reviewers": [
+        {
+          "id": "primary",
+          "perspective": "acceptance criteria, behavior, tests, and implementation completeness",
+          "command": "python3 .nous/agents/review.py"
+        },
+        {
+          "id": "secondary",
+          "perspective": "security, regressions, boundary conditions, and unintended scope",
+          "command": "python3 .nous/agents/review.py"
+        }
+      ]
+    },
+    "validation": {
+      "allowed_processes": [
+        ["/usr/bin/python3", "-m", "pytest"]
+      ]
+    },
+    "min_cycles": 1,
+    "max_cycles": 10,
+    "max_steps": 30,
+    "lease_seconds": 600,
+    "agent_timeout_seconds": 300,
+    "subagents": {
+      "required": true,
+      "mode": "external"
+    }
+  }
+}

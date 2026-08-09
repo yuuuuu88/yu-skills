@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "review.testing.mutation",
+  "version": "1.0.0",
+  "phase": "review",
+  "core": {
+    "name": "Mutation Testing",
+    "originator": "Richard DeMillo, Richard Lipton, and Frederick Sayward",
+    "source_url": "https://doi.org/10.1109/MC.1978.1646571",
+    "operational_rule": "Inject small faults into high-risk logic and classify surviving mutations as test gaps or equivalent changes."
+  },
+  "capabilities": [
+    "review.test-quality",
+    "review.fault-injection"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 70,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "6761b973c19b6668a1fbca8fcd22b5afbc2c7b3511ad977027921b00c9c4b07e",
+  "guidance_hash": "9433bf24b64f2b1cabed983c5df0b5f95f7037ecb1600d6f2817a6b349ee99bd",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "curated-guidance"
+  }
+}

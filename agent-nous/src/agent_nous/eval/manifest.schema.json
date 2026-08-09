@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": 1},
+    "suite_id": {"type": "string", "minLength": 1},
+    "suite_version": {"type": "string", "minLength": 1},
+    "runtime_contract_version": {"type": "integer", "minimum": 1},
+    "defaults": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "trials": {"type": "integer", "minimum": 1},
+        "timeout_seconds": {"type": "integer", "minimum": 1, "maximum": 300},
+        "isolation_profile": {"type": "string", "minLength": 1},
+        "network_policy": {"const": "deny"}
+      },
+      "required": ["trials", "timeout_seconds", "isolation_profile", "network_policy"]
+    },
+    "cases": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/case"}}
+  },
+  "required": ["schema_version", "suite_id", "suite_version", "runtime_contract_version", "defaults", "cases"],
+  "$defs": {
+    "fixture_ref": {"type": "string", "pattern": "^fixture://[a-z0-9][a-z0-9/_-]*$"},
+    "nullable_fixture_ref": {"anyOf": [{"$ref": "#/$defs/fixture_ref"}, {"type": "null"}]},
+    "case": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "eval_id": {"type": "string", "pattern": "^[a-z][a-z0-9_]+$"},
+        "category": {"enum": ["positive", "negative", "resume", "approval", "needs_plan", "isolation", "sequential_e2e", "parallel", "subskill", "remote"]},
+        "registration_required_by_stage": {"type": "integer", "minimum": 1},
+        "runnable_from_stage": {"type": "integer", "minimum": 1},
+        "required_for_releases": {"type": "array", "minItems": 1, "items": {"enum": ["v0.1", "v0.2", "v0.3", "v1.0"]}, "uniqueItems": true},
+        "handler": {"type": "string", "pattern": "^[a-z][a-z0-9_]+$"},
+        "task": {"$ref": "#/$defs/task"},
+        "trial": {"$ref": "#/$defs/trial"},
+        "grader": {"$ref": "#/$defs/grader"},
+        "trace": {"$ref": "#/$defs/trace"},
+        "outcome": {"$ref": "#/$defs/outcome"}
+      },
+      "required": ["eval_id", "category", "registration_required_by_stage", "runnable_from_stage", "required_for_releases", "handler", "task", "trial", "grader", "trace", "outcome"]
+    },
+    "task": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "invocation_mode": {"enum": ["explicit", "implicit", "one_off"]},
+        "request_ref": {"$ref": "#/$defs/fixture_ref"},
+        "fixture_refs": {"type": "array", "items": {"$ref": "#/$defs/fixture_ref"}, "uniqueItems": true},
+        "initial_state_ref": {"$ref": "#/$defs/nullable_fixture_ref"},
+        "approval_refs": {"type": "array", "items": {"$ref": "#/$defs/fixture_ref"}, "uniqueItems": true}
+      },
+      "required": ["invocation_mode", "request_ref", "fixture_refs", "initial_state_ref", "approval_refs"]
+    },
+    "trial": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "repetitions": {"type": "integer", "minimum": 1, "maximum": 20},
+        "setup_ref": {"$ref": "#/$defs/fixture_ref"},
+        "interruption_ref": {"$ref": "#/$defs/nullable_fixture_ref"},
+        "resume_ref": {"$ref": "#/$defs/nullable_fixture_ref"},
+        "environment_overrides": {"type": "object", "additionalProperties": false},
+        "timeout_seconds": {"type": "integer", "minimum": 1, "maximum": 300}
+      },
+      "required": ["repetitions", "setup_ref", "interruption_ref", "resume_ref", "environment_overrides"]
+    },
+    "grader": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "expected_state": {"type": "object", "additionalProperties": {"type": ["string", "integer", "boolean", "null"]}},
+        "expected_events": {"type": "array", "items": {"type": "string"}},
+        "forbidden_events": {"type": "array", "items": {"type": "string"}},
+        "required_files": {"type": "array", "items": {"type": "string"}},
+        "forbidden_files": {"type": "array", "items": {"type": "string"}},
+        "expected_human_question": {"type": "boolean"},
+        "expected_policy_decisions": {"type": "array", "items": {"enum": ["grant", "deny", "approval_required", "unsupported"]}, "uniqueItems": true},
+        "expected_action_descriptors": {"type": "array", "items": {"enum": ["filesystem.read", "filesystem.write", "process.run", "git.local", "git.remote", "network", "credential", "paid"]}, "uniqueItems": true},
+        "allowed_write_resources": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+        "forbidden_network": {"type": "boolean"},
+        "no_secret_leak": {"type": "boolean"}
+      },
+      "required": ["expected_state", "expected_events", "forbidden_events", "required_files", "forbidden_files", "expected_human_question", "expected_policy_decisions", "expected_action_descriptors", "allowed_write_resources", "forbidden_network", "no_secret_leak"]
+    },
+    "trace": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {"capture": {"type": "array", "minItems": 1, "items": {"enum": ["actions", "approvals", "artifacts", "checkpoint", "children", "diff", "durability", "environment", "events", "knowledge", "policy", "process", "selection", "state"]}, "uniqueItems": true}, "redact": {"const": true}},
+      "required": ["capture", "redact"]
+    },
+    "outcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {"pass_condition": {"type": "string", "pattern": "^grader:[a-z][a-z0-9_]+$"}, "pass_predicate": {"type": "string", "pattern": "^grader:[a-z][a-z0-9_]+$"}, "flake_threshold": {"type": "integer", "minimum": 0}},
+      "required": ["pass_condition", "pass_predicate", "flake_threshold"]
+    }
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "knowledge.research.reproducible",
+  "version": "1.0.0",
+  "phase": "knowledge",
+  "core": {
+    "name": "Reproducible Research Notes",
+    "originator": "Nous independent synthesis",
+    "source_url": "https://www.nationalacademies.org/read/25303/chapter/1",
+    "operational_rule": "後から同じ資料を読めない場合でも、識別子・保存先・抜粋hash・限界を残して再調査点を作る。"
+  },
+  "capabilities": [
+    "knowledge.provenance",
+    "knowledge.audit-trail"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 93,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "5f06e352db3711085ed1c8c2f404e39f44d3edf7ffd27d4522efd8ef0726232c",
+  "guidance_hash": "d62e0c15be729bda55575f886cd6af392fe7acda369b9b5be4ed8d9aeb60f852",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "independent-synthesis"
+  }
+}

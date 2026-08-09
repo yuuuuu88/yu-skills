@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "review.release.rollback",
+  "version": "1.0.0",
+  "phase": "review",
+  "core": {
+    "name": "Release and Rollback Review",
+    "originator": "Nous independent synthesis",
+    "source_url": "https://sre.google/sre-book/release-engineering/",
+    "operational_rule": "成功経路だけでなく失敗時の最短安全経路を実行可能なvalidationとして提案する。"
+  },
+  "capabilities": [
+    "review.release",
+    "review.independence"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 95,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "d7fffbaffec41f5f784f7c19bf00da34acbf687e913351649b930c0144fe39f3",
+  "guidance_hash": "4a91de9dc6440bcb0b6ba85af7134c2292642d4a67c8afc13048a7ce64ae961c",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "independent-synthesis"
+  }
+}

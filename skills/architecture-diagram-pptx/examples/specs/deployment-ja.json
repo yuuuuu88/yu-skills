@@ -1,0 +1,277 @@
+{
+  "title": "クラウド配置とセキュリティゾーン",
+  "purpose": "利用者から業務API・申請DBまでの配置と、監視データの送り先を示す",
+  "diagram_type": "deployment",
+  "audience": "情シス・クラウド担当者",
+  "canvas": {
+    "width": 13.333,
+    "height": 7.5
+  },
+  "layout": {
+    "direction": "left-to-right",
+    "grid": 0.25,
+    "safe_area": {
+      "x": 0.5,
+      "y": 1.25,
+      "w": 12.3,
+      "h": 5.25
+    }
+  },
+  "boundaries": [
+    {
+      "id": "public",
+      "label": "public zone",
+      "node_ids": [
+        "portal"
+      ],
+      "position": {
+        "x": 2.25,
+        "y": 2,
+        "w": 1.75,
+        "h": 3.25
+      },
+      "style": {
+        "fill": "F8FAFC",
+        "line": "94A3B8",
+        "line_style": "dashed",
+        "transparency": 8
+      }
+    },
+    {
+      "id": "dmz",
+      "label": "DMZ",
+      "node_ids": [
+        "waf",
+        "gateway"
+      ],
+      "position": {
+        "x": 4.25,
+        "y": 2,
+        "w": 3.25,
+        "h": 3.25
+      },
+      "style": {
+        "fill": "FFF7ED",
+        "line": "FDBA74",
+        "line_style": "dashed",
+        "transparency": 8
+      }
+    },
+    {
+      "id": "private",
+      "label": "private zone",
+      "node_ids": [
+        "api",
+        "db"
+      ],
+      "position": {
+        "x": 7.75,
+        "y": 2,
+        "w": 3.25,
+        "h": 3.25
+      },
+      "style": {
+        "fill": "EFF6FF",
+        "line": "93C5FD",
+        "line_style": "solid",
+        "transparency": 8
+      }
+    },
+    {
+      "id": "management",
+      "label": "management zone",
+      "node_ids": [
+        "monitor"
+      ],
+      "position": {
+        "x": 11.25,
+        "y": 2,
+        "w": 1.5,
+        "h": 3.25
+      },
+      "style": {
+        "fill": "F5F3FF",
+        "line": "C4B5FD",
+        "line_style": "dashed",
+        "transparency": 8
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "id": "user",
+      "label": "利用者",
+      "kind": "actor",
+      "icon": "user",
+      "role": "外部の利用者",
+      "position": {
+        "x": 0.75,
+        "y": 3,
+        "w": 1.25,
+        "h": 1
+      }
+    },
+    {
+      "id": "portal",
+      "label": "社内ポータル",
+      "kind": "application",
+      "icon": "browser",
+      "role": "ブラウザ画面",
+      "position": {
+        "x": 2.5,
+        "y": 3,
+        "w": 1.25,
+        "h": 1
+      }
+    },
+    {
+      "id": "waf",
+      "label": "WAF",
+      "kind": "security",
+      "icon": "firewall",
+      "role": "入口の防御",
+      "position": {
+        "x": 4.25,
+        "y": 3,
+        "w": 1.25,
+        "h": 1
+      }
+    },
+    {
+      "id": "gateway",
+      "label": "API Gateway",
+      "kind": "gateway",
+      "icon": "api",
+      "role": "経路制御",
+      "position": {
+        "x": 6.0,
+        "y": 3,
+        "w": 1.25,
+        "h": 1
+      }
+    },
+    {
+      "id": "api",
+      "label": "業務API",
+      "kind": "application",
+      "icon": "app",
+      "role": "業務処理",
+      "position": {
+        "x": 7.75,
+        "y": 3,
+        "w": 1.25,
+        "h": 1
+      }
+    },
+    {
+      "id": "db",
+      "label": "申請DB",
+      "kind": "data-store",
+      "icon": "database",
+      "role": "業務データ",
+      "position": {
+        "x": 9.5,
+        "y": 3,
+        "w": 1.25,
+        "h": 1
+      }
+    },
+    {
+      "id": "monitor",
+      "label": "監視基盤",
+      "kind": "operations",
+      "icon": "server",
+      "role": "ログ・メトリクス",
+      "position": {
+        "x": 11.25,
+        "y": 3,
+        "w": 1.25,
+        "h": 1
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "user-portal",
+      "from": "user",
+      "to": "portal",
+      "label": "HTTPS",
+      "relation": "data_flow",
+      "line_style": "solid",
+      "from_anchor": "right",
+      "to_anchor": "left"
+    },
+    {
+      "id": "portal-waf",
+      "from": "portal",
+      "to": "waf",
+      "label": "HTTPS",
+      "relation": "data_flow",
+      "line_style": "solid",
+      "from_anchor": "right",
+      "to_anchor": "left"
+    },
+    {
+      "id": "waf-gateway",
+      "from": "waf",
+      "to": "gateway",
+      "label": "HTTPS",
+      "relation": "data_flow",
+      "line_style": "solid",
+      "from_anchor": "right",
+      "to_anchor": "left"
+    },
+    {
+      "id": "gateway-api",
+      "from": "gateway",
+      "to": "api",
+      "label": "API",
+      "relation": "data_flow",
+      "line_style": "solid",
+      "from_anchor": "right",
+      "to_anchor": "left"
+    },
+    {
+      "id": "api-db",
+      "from": "api",
+      "to": "db",
+      "label": "SQL",
+      "relation": "data_flow",
+      "line_style": "solid",
+      "from_anchor": "right",
+      "to_anchor": "left"
+    },
+    {
+      "id": "db-monitor",
+      "from": "db",
+      "to": "monitor",
+      "label": "ログ",
+      "relation": "monitoring",
+      "line_style": "dotted",
+      "from_anchor": "right",
+      "to_anchor": "left"
+    }
+  ],
+  "legend_relations": [
+    "data_flow",
+    "monitoring"
+  ],
+  "annotations": [
+    {
+      "id": "scope",
+      "text": "高位の論理ゾーン。詳細なサブネット、FWルール、冗長化は別図で扱う。",
+      "position": {
+        "x": 0.6,
+        "y": 6.92,
+        "w": 9.8,
+        "h": 0.18
+      }
+    }
+  ],
+  "metadata": {
+    "version": "0.3.0",
+    "updated_at": "2026-08-09",
+    "author": "architecture-diagram-pptx example",
+    "assets": "neutral icon catalog; original SVG line icons"
+  }
+}

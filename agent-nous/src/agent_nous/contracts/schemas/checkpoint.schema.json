@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "checkpoint.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "checkpoint_id": {
+      "type": "string"
+    },
+    "task_id": {
+      "$ref": "common.schema.json#/$defs/task_id"
+    },
+    "revision": {
+      "$ref": "common.schema.json#/$defs/revision"
+    },
+    "created_at": {
+      "$ref": "common.schema.json#/$defs/timestamp"
+    },
+    "phase": {
+      "$ref": "common.schema.json#/$defs/phase"
+    },
+    "cycle": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "reason": {
+      "type": "string"
+    },
+    "state_digest": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "next_safe_action": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "checkpoint_id",
+    "task_id",
+    "revision",
+    "created_at",
+    "phase",
+    "cycle",
+    "reason",
+    "state_digest",
+    "next_safe_action"
+  ]
+}

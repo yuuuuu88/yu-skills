@@ -1,0 +1,20 @@
+{
+  "title": "コネクタ交差の検知",
+  "purpose": "水平経路と垂直経路の意図しない交差を検知する",
+  "diagram_type": "network",
+  "audience": "テスト担当者",
+  "expect": "fail",
+  "canvas": {"width": 13.333, "height": 7.5},
+  "layout": {"direction": "left-to-right", "grid": 0.25, "safe_area": {"x": 0.45, "y": 1.1, "w": 12.4, "h": 5.35}},
+  "nodes": [
+    {"id": "left", "label": "主経路入口", "kind": "service", "position": {"x": 1.0, "y": 2.0, "w": 1.3, "h": 0.8}},
+    {"id": "right", "label": "主経路出口", "kind": "service", "position": {"x": 7.0, "y": 2.0, "w": 1.3, "h": 0.8}},
+    {"id": "top", "label": "補助入口", "kind": "service", "position": {"x": 4.0, "y": 1.0, "w": 1.0, "h": 0.8}},
+    {"id": "bottom", "label": "補助出口", "kind": "service", "position": {"x": 4.0, "y": 4.0, "w": 1.0, "h": 0.8}}
+  ],
+  "edges": [
+    {"id": "horizontal", "from": "left", "to": "right", "label": "主経路", "style": "bold"},
+    {"id": "vertical", "from": "top", "to": "bottom", "from_anchor": "bottom", "to_anchor": "top", "label": "補助経路", "style": "dashed"}
+  ],
+  "metadata": {"version": "0.2.0", "updated_at": "2026-08-09", "author": "fixture", "assets": "none"}
+}

@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "plan.agentskills.contract",
+  "version": "1.0.0",
+  "phase": "plan",
+  "core": {
+    "name": "Agent Skill Capability Contract",
+    "originator": "Nous independent synthesis",
+    "source_url": "https://agentskills.io/specification",
+    "operational_rule": "skillの説明を権限と混同せず、実行できること・できないことを受入条件に書く。"
+  },
+  "capabilities": [
+    "plan.acceptance",
+    "plan.capability-contract"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 90,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "f473e7d3c53e79a0db7adf1da8e87f50fb33745e89ca0e4b902d6b3f05157888",
+  "guidance_hash": "25f96473624423797f330950179fecd88aac120beb9f7fcd1f74262ae2733d97",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "independent-synthesis"
+  }
+}

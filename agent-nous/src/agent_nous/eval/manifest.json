@@ -1,0 +1,1095 @@
+{
+  "schema_version": 1,
+  "suite_id": "nous-release-gate",
+  "suite_version": "1.0.0",
+  "runtime_contract_version": 1,
+  "defaults": {
+    "trials": 1,
+    "timeout_seconds": 60,
+    "isolation_profile": "ephemeral-local",
+    "network_policy": "deny"
+  },
+  "cases": [
+    {
+      "eval_id": "trigger_explicit_new",
+      "category": "positive",
+      "registration_required_by_stage": 1,
+      "runnable_from_stage": 4,
+      "required_for_releases": [
+        "v0.1",
+        "v0.2",
+        "v0.3",
+        "v1.0"
+      ],
+      "handler": "trigger_explicit_new",
+      "task": {
+        "invocation_mode": "explicit",
+        "request_ref": "fixture://requests/explicit-managed",
+        "fixture_refs": [
+          "fixture://base-task"
+        ],
+        "initial_state_ref": null,
+        "approval_refs": []
+      },
+      "trial": {
+        "repetitions": 1,
+        "setup_ref": "fixture://base-task",
+        "interruption_ref": null,
+        "resume_ref": null,
+        "environment_overrides": {}
+      },
+      "grader": {
+        "expected_state": {
+          "lifecycle_status": "active",
+          "execution_status": "idle",
+          "phase": "plan"
+        },
+        "expected_events": [
+          "task_created"
+        ],
+        "forbidden_events": [],
+        "required_files": [
+          "task-definition.json",
+          "state.json",
+          "events.jsonl"
+        ],
+        "forbidden_files": [],
+        "expected_human_question": false,
+        "expected_policy_decisions": [],
+        "expected_action_descriptors": [],
+        "allowed_write_resources": [
+          "trial_runtime"
+        ],
+        "forbidden_network": true,
+        "no_secret_leak": true
+      },
+      "trace": {
+        "capture": [
+          "state",
+          "events"
+        ],
+        "redact": true
+      },
+      "outcome": {
+        "pass_condition": "grader:trigger_explicit_new",
+        "flake_threshold": 0,
+        "pass_predicate": "grader:trigger_explicit_new"
+      }
+    },
+    {
+      "eval_id": "trigger_one_off_negative",
+      "category": "negative",
+      "registration_required_by_stage": 1,
+      "runnable_from_stage": 4,
+      "required_for_releases": [
+        "v0.1",
+        "v0.2",
+        "v0.3",
+        "v1.0"
+      ],
+      "handler": "trigger_one_off_negative",
+      "task": {
+        "invocation_mode": "one_off",
+        "request_ref": "fixture://requests/one-off",
+        "fixture_refs": [
+          "fixture://base-task"
+        ],
+        "initial_state_ref": null,
+        "approval_refs": []
+      },
+      "trial": {
+        "repetitions": 1,
+        "setup_ref": "fixture://base-task",
+        "interruption_ref": null,
+        "resume_ref": null,
+        "environment_overrides": {}
+      },
+      "grader": {
+        "expected_state": {},
+        "expected_events": [],
+        "forbidden_events": [
+          "task_created"
+        ],
+        "required_files": [],
+        "forbidden_files": [
+          "tasks/*/events.jsonl"
+        ],
+        "expected_human_question": false,
+        "expected_policy_decisions": [],
+        "expected_action_descriptors": [],
+        "allowed_write_resources": [
+          "trial_runtime"
+        ],
+        "forbidden_network": true,
+        "no_secret_leak": true
+      },
+      "trace": {
+        "capture": [
+          "state"
+        ],
+        "redact": true
+      },
+      "outcome": {
+        "pass_condition": "grader:trigger_one_off_negative",
+        "flake_threshold": 0,
+        "pass_predicate": "grader:trigger_one_off_negative"
+      }
+    },
+    {
+      "eval_id": "pause_fresh_process_resume",
+      "category": "resume",
+      "registration_required_by_stage": 1,
+      "runnable_from_stage": 4,
+      "required_for_releases": [
+        "v0.1",
+        "v0.2",
+        "v0.3",
+        "v1.0"
+      ],
+      "handler": "pause_fresh_process_resume",
+      "task": {
+        "invocation_mode": "explicit",
+        "request_ref": "fixture://requests/pause",
+        "fixture_refs": [
+          "fixture://base-task"
+        ],
+        "initial_state_ref": null,
+        "approval_refs": []
+      },
+      "trial": {
+        "repetitions": 1,
+        "setup_ref": "fixture://base-task",
+        "interruption_ref": "fixture://interrupt/pause",
+        "resume_ref": "fixture://resume/fresh-process",
+        "environment_overrides": {}
+      },
+      "grader": {
+        "expected_state": {
+          "lifecycle_status": "active",
+          "execution_status": "idle"
+        },
+        "expected_events": [
+          "task_paused",
+          "task_resumed"
+        ],
+        "forbidden_events": [],
+        "required_files": [
+          "checkpoints/latest.json"
+        ],
+        "forbidden_files": [],
+        "expected_human_question": false,
+        "expected_policy_decisions": [],
+        "expected_action_descriptors": [],
+        "allowed_write_resources": [
+          "trial_runtime"
+        ],
+        "forbidden_network": true,
+        "no_secret_leak": true
+      },
+      "trace": {
+        "capture": [
+          "state",
+          "events",
+          "checkpoint"
+        ],
+        "redact": true
+      },
+      "outcome": {
+        "pass_condition": "grader:pause_fresh_process_resume",
+        "flake_threshold": 0,
+        "pass_predicate": "grader:pause_fresh_process_resume"
+      }
+    },
+    {
+      "eval_id": "trial_isolation_basic",
+      "category": "isolation",
+      "registration_required_by_stage": 1,
+      "runnable_from_stage": 4,
+      "required_for_releases": [
+        "v0.1",
+        "v0.2",
+        "v0.3",
+        "v1.0"
+      ],
+      "handler": "trial_isolation_basic",
+      "task": {
+        "invocation_mode": "explicit",
+        "request_ref": "fixture://requests/isolation",
+        "fixture_refs": [
+          "fixture://base-task"
+        ],
+        "initial_state_ref": null,
+        "approval_refs": []
+      },
+      "trial": {
+        "repetitions": 1,
+        "setup_ref": "fixture://base-task",
+        "interruption_ref": null,
+        "resume_ref": null,
+        "environment_overrides": {}
+      },
+      "grader": {
+        "expected_state": {},
+        "expected_events": [],
+        "forbidden_events": [],
+        "required_files": [],
+        "forbidden_files": [],
+        "expected_human_question": false,
+        "expected_policy_decisions": [],
+        "expected_action_descriptors": [],
+        "allowed_write_resources": [
+          "trial_runtime"
+        ],
+        "forbidden_network": true,
+        "no_secret_leak": true
+      },
+      "trace": {
+        "capture": [
+          "environment"
+        ],
+        "redact": true
+      },
+      "outcome": {
+        "pass_condition": "grader:trial_isolation_basic",
+        "flake_threshold": 0,
+        "pass_predicate": "grader:trial_isolation_basic"
+      }
+    },
+    {
+      "eval_id": "trigger_implicit_managed_workflow",
+      "category": "positive",
+      "registration_required_by_stage": 1,
+      "runnable_from_stage": 5,
+      "required_for_releases": [
+        "v0.2",
+        "v0.3",
+        "v1.0"
+      ],
+      "handler": "trigger_implicit_managed_workflow",
+      "task": {
+        "invocation_mode": "implicit",
+        "request_ref": "fixture://requests/implicit-managed",
+        "fixture_refs": [
+          "fixture://base-task"
+        ],
+        "initial_state_ref": null,
+        "approval_refs": []
+      },
+      "trial": {
+        "repetitions": 1,
+        "setup_ref": "fixture://base-task",
+        "interruption_ref": null,
+        "resume_ref": null,
+        "environment_overrides": {}
+      },
+      "grader": {
+        "expected_state": {},
+        "expected_events": [],
+        "forbidden_events": [],
+        "required_files": [],
+        "forbidden_files": [],
+        "expected_human_question": false,
+        "expected_policy_decisions": [],
+        "expected_action_descriptors": [],
+        "allowed_write_resources": [
+          "trial_runtime"
+        ],
+        "forbidden_network": true,
+        "no_secret_leak": true
+      },
+      "trace": {
+        "capture": [
+          "selection"
+        ],
+        "redact": true
+      },
+      "outcome": {
+        "pass_condition": "grader:trigger_implicit_managed_workflow",
+        "flake_threshold": 0,
+        "pass_predicate": "grader:trigger_implicit_managed_workflow"
+      }
+    },
+    {
+      "eval_id": "approval_exact_red_action",
+      "category": "approval",
+      "registration_required_by_stage": 1,
+      "runnable_from_stage": 5,
+      "required_for_releases": [
+        "v0.2",
+        "v0.3",
+        "v1.0"
+      ],
+      "handler": "approval_exact_red_action",
+      "task": {
+        "invocation_mode": "explicit",
+        "request_ref": "fixture://requests/approval",
+        "fixture_refs": [
+          "fixture://isolated-repo"
+        ],
+        "initial_state_ref": null,
+        "approval_refs": [
+          "fixture://approval/exact-red"
+        ]
+      },
+      "trial": {
+        "repetitions": 1,
+        "setup_ref": "fixture://isolated-repo",
+        "interruption_ref": "fixture://approval/exact-red",
+        "resume_ref": null,
+        "environment_overrides": {}
+      },
+      "grader": {
+        "expected_state": {
+          "lifecycle_status": "waiting_human"
+        },
+        "expected_events": [
+          "approval_requested",
+          "human_input_requested"
+        ],
+        "forbidden_events": [
+          "action_started"
+        ],
+        "required_files": [
+          "approvals.json"
+        ],
+        "forbidden_files": [],
+        "expected_human_question": true,
+        "expected_policy_decisions": [
+          "approval_required"
+        ],
+        "expected_action_descriptors": [
+          "git.local"
+        ],
+        "allowed_write_resources": [
+          "trial_repository"
+        ],
+        "forbidden_network": true,
+        "no_secret_leak": true
+      },
+      "trace": {
+        "capture": [
+          "state",
+          "events",
+          "approvals"
+        ],
+        "redact": true
+      },
+      "outcome": {
+        "pass_condition": "grader:approval_exact_red_action",
+        "flake_threshold": 0,
+        "pass_predicate": "grader:approval_exact_red_action"
+      }
+    },
+    {
+      "eval_id": "review_needs_plan_once",
+      "category": "needs_plan",
+      "registration_required_by_stage": 1,
+      "runnable_from_stage": 5,
+      "required_for_releases": [
+        "v0.2",
+        "v0.3",
+        "v1.0"
+      ],
+      "handler": "review_needs_plan_once",
+      "task": {
+        "invocation_mode": "explicit",
+        "request_ref": "fixture://requests/replan",
+        "fixture_refs": [
+          "fixture://base-task"
+        ],
+        "initial_state_ref": null,
+        "approval_refs": []
+      },
+      "trial": {
+        "repetitions": 1,
+        "setup_ref": "fixture://base-task",
+        "interruption_ref": null,
+        "resume_ref": null,
+        "environment_overrides": {}
+      },
+      "grader": {
+        "expected_state": {
+          "phase": "plan",
+          "cycle": 2
+        },
+        "expected_events": [
+          "phase_recorded"
+        ],
+        "forbidden_events": [],
+        "required_files": [
+          "cycles/0001/03-review-result.json"
+        ],
+        "forbidden_files": [],
+        "expected_human_question": false,
+        "expected_policy_decisions": [],
+        "expected_action_descriptors": [],
+        "allowed_write_resources": [
+          "trial_runtime"
+        ],
+        "forbidden_network": true,
+        "no_secret_leak": true
+      },
+      "trace": {
+        "capture": [
+          "state",
+          "events",
+          "artifacts"
+        ],
+        "redact": true
+      },
+      "outcome": {
+        "pass_condition": "grader:review_needs_plan_once",
+        "flake_threshold": 0,
+        "pass_predicate": "grader:review_needs_plan_once"
+      }
+    },
+    {
+      "eval_id": "managed_scope_violation",
+      "category": "isolation",
+      "registration_required_by_stage": 1,
+      "runnable_from_stage": 5,
+      "required_for_releases": [
+        "v0.2",
+        "v0.3",
+        "v1.0"
+      ],
+      "handler": "managed_scope_violation",
+      "task": {
+        "invocation_mode": "explicit",
+        "request_ref": "fixture://requests/scope",
+        "fixture_refs": [
+          "fixture://isolated-repo"
+        ],
+        "initial_state_ref": null,
+        "approval_refs": []
+      },
+      "trial": {
+        "repetitions": 1,
+        "setup_ref": "fixture://isolated-repo",
+        "interruption_ref": null,
+        "resume_ref": null,
+        "environment_overrides": {}
+      },
+      "grader": {
+        "expected_state": {},
+        "expected_events": [],
+        "forbidden_events": [
+          "action_started"
+        ],
+        "required_files": [],
+        "forbidden_files": [
+          "outside.txt"
+        ],
+        "expected_human_question": false,
+        "expected_policy_decisions": [
+          "deny"
+        ],
+        "expected_action_descriptors": [
+          "filesystem.write"
+        ],
+        "allowed_write_resources": [
+          "trial_repository"
+        ],
+        "forbidden_network": true,
+        "no_secret_leak": true
+      },
+      "trace": {
+        "capture": [
+          "policy",
+          "state"
+        ],
+        "redact": true
+      },
+      "outcome": {
+        "pass_condition": "grader:managed_scope_violation",
+        "flake_threshold": 0,
+        "pass_predicate": "grader:managed_scope_violation"
+      }
+    },
+    {
+      "eval_id": "unbrokerable_action_denied",
+      "category": "negative",
+      "registration_required_by_stage": 1,
+      "runnable_from_stage": 5,
+      "required_for_releases": [
+        "v0.2",
+        "v0.3",
+        "v1.0"
+      ],
+      "handler": "unbrokerable_action_denied",
+      "task": {
+        "invocation_mode": "explicit",
+        "request_ref": "fixture://requests/unbrokerable",
+        "fixture_refs": [
+          "fixture://isolated-repo"
+        ],
+        "initial_state_ref": null,
+        "approval_refs": []
+      },
+      "trial": {
+        "repetitions": 1,
+        "setup_ref": "fixture://isolated-repo",
+        "interruption_ref": null,
+        "resume_ref": null,
+        "environment_overrides": {}
+      },
+      "grader": {
+        "expected_state": {},
+        "expected_events": [],
+        "forbidden_events": [
+          "action_started"
+        ],
+        "required_files": [],
+        "forbidden_files": [],
+        "expected_human_question": false,
+        "expected_policy_decisions": [
+          "unsupported"
+        ],
+        "expected_action_descriptors": [
+          "git.remote"
+        ],
+        "allowed_write_resources": [
+          "trial_runtime"
+        ],
+        "forbidden_network": true,
+        "no_secret_leak": true
+      },
+      "trace": {
+        "capture": [
+          "policy"
+        ],
+        "redact": true
+      },
+      "outcome": {
+        "pass_condition": "grader:unbrokerable_action_denied",
+        "flake_threshold": 0,
+        "pass_predicate": "grader:unbrokerable_action_denied"
+      }
+    },
+    {
+      "eval_id": "small_change_sequential",
+      "category": "sequential_e2e",
+      "registration_required_by_stage": 1,
+      "runnable_from_stage": 5,
+      "required_for_releases": [
+        "v0.2",
+        "v0.3",
+        "v1.0"
+      ],
+      "handler": "small_change_sequential",
+      "task": {
+        "invocation_mode": "explicit",
+        "request_ref": "fixture://requests/small-change",
+        "fixture_refs": [
+          "fixture://isolated-repo"
+        ],
+        "initial_state_ref": null,
+        "approval_refs": []
+      },
+      "trial": {
+        "repetitions": 1,
+        "setup_ref": "fixture://isolated-repo",
+        "interruption_ref": null,
+        "resume_ref": "fixture://resume/fresh-process",
+        "environment_overrides": {}
+      },
+      "grader": {
+        "expected_state": {
+          "lifecycle_status": "completed",
+          "phase": "review"
+        },
+        "expected_events": [
+          "action_started",
+          "action_completed",
+          "phase_recorded"
+        ],
+        "forbidden_events": [
+          "policy_violation"
+        ],
+        "required_files": [
+          "cycles/0001/03-review-decision.json"
+        ],
+        "forbidden_files": [],
+        "expected_human_question": false,
+        "expected_policy_decisions": [
+          "grant"
+        ],
+        "expected_action_descriptors": [
+          "filesystem.write",
+          "process.run"
+        ],
+        "allowed_write_resources": [
+          "trial_repository/result.txt"
+        ],
+        "forbidden_network": true,
+        "no_secret_leak": true
+      },
+      "trace": {
+        "capture": [
+          "state",
+          "events",
+          "actions",
+          "diff"
+        ],
+        "redact": true
+      },
+      "outcome": {
+        "pass_condition": "grader:small_change_sequential",
+        "flake_threshold": 0,
+        "pass_predicate": "grader:small_change_sequential"
+      }
+    },
+    {
+      "eval_id": "small_change_interrupt_resume",
+      "category": "sequential_e2e",
+      "registration_required_by_stage": 1,
+      "runnable_from_stage": 5,
+      "required_for_releases": [
+        "v0.2",
+        "v0.3",
+        "v1.0"
+      ],
+      "handler": "small_change_interrupt_resume",
+      "task": {
+        "invocation_mode": "explicit",
+        "request_ref": "fixture://requests/interrupt",
+        "fixture_refs": [
+          "fixture://isolated-repo"
+        ],
+        "initial_state_ref": null,
+        "approval_refs": []
+      },
+      "trial": {
+        "repetitions": 1,
+        "setup_ref": "fixture://isolated-repo",
+        "interruption_ref": "fixture://interrupt/after-write",
+        "resume_ref": "fixture://resume/fresh-process",
+        "environment_overrides": {}
+      },
+      "grader": {
+        "expected_state": {
+          "lifecycle_status": "completed"
+        },
+        "expected_events": [
+          "action_completed",
+          "task_paused",
+          "task_resumed"
+        ],
+        "forbidden_events": [],
+        "required_files": [
+          "actions/interrupt-write.json"
+        ],
+        "forbidden_files": [],
+        "expected_human_question": false,
+        "expected_policy_decisions": [
+          "grant"
+        ],
+        "expected_action_descriptors": [
+          "filesystem.write"
+        ],
+        "allowed_write_resources": [
+          "trial_repository/result.txt"
+        ],
+        "forbidden_network": true,
+        "no_secret_leak": true
+      },
+      "trace": {
+        "capture": [
+          "state",
+          "events",
+          "actions"
+        ],
+        "redact": true
+      },
+      "outcome": {
+        "pass_condition": "grader:small_change_interrupt_resume",
+        "flake_threshold": 0,
+        "pass_predicate": "grader:small_change_interrupt_resume"
+      }
+    },
+    {
+      "eval_id": "knowledge_gate",
+      "category": "positive",
+      "registration_required_by_stage": 1,
+      "runnable_from_stage": 6,
+      "required_for_releases": [
+        "v0.3",
+        "v1.0"
+      ],
+      "handler": "knowledge_gate",
+      "task": {
+        "invocation_mode": "explicit",
+        "request_ref": "fixture://requests/knowledge",
+        "fixture_refs": [
+          "fixture://knowledge"
+        ],
+        "initial_state_ref": null,
+        "approval_refs": []
+      },
+      "trial": {
+        "repetitions": 1,
+        "setup_ref": "fixture://knowledge",
+        "interruption_ref": null,
+        "resume_ref": null,
+        "environment_overrides": {}
+      },
+      "grader": {
+        "expected_state": {
+          "phase": "implement"
+        },
+        "expected_events": [
+          "knowledge_recorded",
+          "phase_recorded"
+        ],
+        "forbidden_events": [],
+        "required_files": [
+          "knowledge/questions.json",
+          "knowledge/claims.json",
+          "knowledge/sources.json"
+        ],
+        "forbidden_files": [],
+        "expected_human_question": false,
+        "expected_policy_decisions": [],
+        "expected_action_descriptors": [],
+        "allowed_write_resources": [
+          "trial_runtime"
+        ],
+        "forbidden_network": true,
+        "no_secret_leak": true
+      },
+      "trace": {
+        "capture": [
+          "knowledge",
+          "state"
+        ],
+        "redact": true
+      },
+      "outcome": {
+        "pass_condition": "grader:knowledge_gate",
+        "flake_threshold": 0,
+        "pass_predicate": "grader:knowledge_gate"
+      }
+    },
+    {
+      "eval_id": "parallel_isolation_integration",
+      "category": "parallel",
+      "registration_required_by_stage": 1,
+      "runnable_from_stage": 8,
+      "required_for_releases": [
+        "v0.3",
+        "v1.0"
+      ],
+      "handler": "parallel_isolation_integration",
+      "task": {
+        "invocation_mode": "explicit",
+        "request_ref": "fixture://requests/parallel",
+        "fixture_refs": [
+          "fixture://parallel"
+        ],
+        "initial_state_ref": null,
+        "approval_refs": []
+      },
+      "trial": {
+        "repetitions": 1,
+        "setup_ref": "fixture://parallel",
+        "interruption_ref": null,
+        "resume_ref": null,
+        "environment_overrides": {}
+      },
+      "grader": {
+        "expected_state": {
+          "lifecycle_status": "completed",
+          "phase_kind": "integration"
+        },
+        "expected_events": [
+          "child_loop_created",
+          "parallel_plan_recorded",
+          "child_worktree_bound",
+          "reservation_acquired",
+          "reservation_conflicted",
+          "reservation_released",
+          "child_result_recorded",
+          "integration_review_recorded"
+        ],
+        "forbidden_events": [],
+        "required_files": [
+          "loops/write-child/contract.json",
+          "loops/conflict-child/contract.json",
+          "loops/write-child/worktree.json"
+        ],
+        "forbidden_files": [],
+        "expected_human_question": true,
+        "expected_policy_decisions": [
+          "grant",
+          "approval_required"
+        ],
+        "expected_action_descriptors": [
+          "filesystem.write",
+          "git.local"
+        ],
+        "allowed_write_resources": [
+          "trial_repository/child-only.txt"
+        ],
+        "forbidden_network": true,
+        "no_secret_leak": true
+      },
+      "trace": {
+        "capture": [
+          "state",
+          "events",
+          "children",
+          "actions",
+          "diff"
+        ],
+        "redact": true
+      },
+      "outcome": {
+        "pass_condition": "grader:parallel_isolation_integration",
+        "flake_threshold": 0,
+        "pass_predicate": "grader:parallel_isolation_integration"
+      }
+    },
+    {
+      "eval_id": "parallel_interrupt_resume",
+      "category": "resume",
+      "registration_required_by_stage": 1,
+      "runnable_from_stage": 8,
+      "required_for_releases": [
+        "v0.3",
+        "v1.0"
+      ],
+      "handler": "parallel_interrupt_resume",
+      "task": {
+        "invocation_mode": "explicit",
+        "request_ref": "fixture://requests/parallel-resume",
+        "fixture_refs": [
+          "fixture://parallel"
+        ],
+        "initial_state_ref": null,
+        "approval_refs": []
+      },
+      "trial": {
+        "repetitions": 1,
+        "setup_ref": "fixture://parallel",
+        "interruption_ref": "fixture://interrupt/child-lease",
+        "resume_ref": "fixture://resume/fresh-process",
+        "environment_overrides": {}
+      },
+      "grader": {
+        "expected_state": {},
+        "expected_events": [
+          "child_lease_expired"
+        ],
+        "forbidden_events": [],
+        "required_files": [
+          "loops/recover/checkpoints/latest.json"
+        ],
+        "forbidden_files": [],
+        "expected_human_question": false,
+        "expected_policy_decisions": [],
+        "expected_action_descriptors": [],
+        "allowed_write_resources": [
+          "trial_runtime"
+        ],
+        "forbidden_network": true,
+        "no_secret_leak": true
+      },
+      "trace": {
+        "capture": [
+          "state",
+          "events",
+          "children"
+        ],
+        "redact": true
+      },
+      "outcome": {
+        "pass_condition": "grader:parallel_interrupt_resume",
+        "flake_threshold": 0,
+        "pass_predicate": "grader:parallel_interrupt_resume"
+      }
+    },
+    {
+      "eval_id": "subskill_select_fallback",
+      "category": "subskill",
+      "registration_required_by_stage": 1,
+      "runnable_from_stage": 9,
+      "required_for_releases": [
+        "v0.3",
+        "v1.0"
+      ],
+      "handler": "subskill_select_fallback",
+      "task": {
+        "invocation_mode": "explicit",
+        "request_ref": "fixture://requests/subskill",
+        "fixture_refs": [
+          "fixture://subskills"
+        ],
+        "initial_state_ref": null,
+        "approval_refs": []
+      },
+      "trial": {
+        "repetitions": 1,
+        "setup_ref": "fixture://subskills",
+        "interruption_ref": null,
+        "resume_ref": null,
+        "environment_overrides": {}
+      },
+      "grader": {
+        "expected_state": {},
+        "expected_events": [],
+        "forbidden_events": [],
+        "required_files": [],
+        "forbidden_files": [],
+        "expected_human_question": false,
+        "expected_policy_decisions": [],
+        "expected_action_descriptors": [],
+        "allowed_write_resources": [
+          "trial_runtime"
+        ],
+        "forbidden_network": true,
+        "no_secret_leak": true
+      },
+      "trace": {
+        "capture": [
+          "selection"
+        ],
+        "redact": true
+      },
+      "outcome": {
+        "pass_condition": "grader:subskill_select_fallback",
+        "flake_threshold": 0,
+        "pass_predicate": "grader:subskill_select_fallback"
+      }
+    },
+    {
+      "eval_id": "remote_cross_machine_resume",
+      "category": "remote",
+      "registration_required_by_stage": 1,
+      "runnable_from_stage": 10,
+      "required_for_releases": [
+        "v1.0"
+      ],
+      "handler": "local_bare_cross_clone_resume",
+      "task": {
+        "invocation_mode": "explicit",
+        "request_ref": "fixture://requests/local-bare",
+        "fixture_refs": [
+          "fixture://local-bare"
+        ],
+        "initial_state_ref": null,
+        "approval_refs": []
+      },
+      "trial": {
+        "repetitions": 1,
+        "setup_ref": "fixture://local-bare",
+        "interruption_ref": "fixture://interrupt/divergence",
+        "resume_ref": "fixture://resume/fresh-process",
+        "environment_overrides": {}
+      },
+      "grader": {
+        "expected_state": {
+          "lifecycle_status": "blocked",
+          "sync_status": "conflicted"
+        },
+        "expected_events": [
+          "git_durability_observed",
+          "git_durability_reconciled"
+        ],
+        "forbidden_events": [],
+        "required_files": [
+          "evidence"
+        ],
+        "forbidden_files": [],
+        "expected_human_question": false,
+        "expected_policy_decisions": [
+          "unsupported"
+        ],
+        "expected_action_descriptors": [
+          "git.remote"
+        ],
+        "allowed_write_resources": [
+          "trial_local_bare_fixture"
+        ],
+        "forbidden_network": true,
+        "no_secret_leak": true
+      },
+      "trace": {
+        "capture": [
+          "state",
+          "events",
+          "durability"
+        ],
+        "redact": true
+      },
+      "outcome": {
+        "pass_condition": "grader:local_bare_cross_clone_resume",
+        "flake_threshold": 0,
+        "pass_predicate": "grader:local_bare_cross_clone_resume"
+      }
+    },
+    {
+      "eval_id": "full_policy_surfaces",
+      "category": "isolation",
+      "registration_required_by_stage": 1,
+      "runnable_from_stage": 10,
+      "required_for_releases": [
+        "v1.0"
+      ],
+      "handler": "full_policy_surfaces",
+      "task": {
+        "invocation_mode": "explicit",
+        "request_ref": "fixture://requests/policy",
+        "fixture_refs": [
+          "fixture://isolated-repo"
+        ],
+        "initial_state_ref": null,
+        "approval_refs": []
+      },
+      "trial": {
+        "repetitions": 1,
+        "setup_ref": "fixture://isolated-repo",
+        "interruption_ref": null,
+        "resume_ref": null,
+        "environment_overrides": {}
+      },
+      "grader": {
+        "expected_state": {},
+        "expected_events": [],
+        "forbidden_events": [],
+        "required_files": [],
+        "forbidden_files": [],
+        "expected_human_question": false,
+        "expected_policy_decisions": [
+          "grant",
+          "deny",
+          "unsupported"
+        ],
+        "expected_action_descriptors": [
+          "filesystem.write",
+          "process.run",
+          "git.local",
+          "git.remote",
+          "network",
+          "credential",
+          "paid"
+        ],
+        "allowed_write_resources": [
+          "trial_repository"
+        ],
+        "forbidden_network": true,
+        "no_secret_leak": true
+      },
+      "trace": {
+        "capture": [
+          "policy"
+        ],
+        "redact": true
+      },
+      "outcome": {
+        "pass_condition": "grader:full_policy_surfaces",
+        "flake_threshold": 0,
+        "pass_predicate": "grader:full_policy_surfaces"
+      }
+    }
+  ]
+}

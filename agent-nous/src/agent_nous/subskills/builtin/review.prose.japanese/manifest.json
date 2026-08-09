@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "id": "review.prose.japanese",
+  "version": "1.0.0",
+  "phase": "review",
+  "core": {
+    "name": "Japanese Prose Review",
+    "originator": "Nous curated guidance",
+    "source_url": "https://www.bunka.go.jp/seisaku/kokugo_nihongo/kokugo_shisaku/94336802.html",
+    "operational_rule": "Review Japanese prose against purpose, reader, terminology, readability, register, and factual preservation without rewriting it wholesale."
+  },
+  "capabilities": [
+    "review.japanese-prose",
+    "review.terminology",
+    "review.readability"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 95,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "2f60545f0aa000acc5dcf7b4d2db65c9bfcaedcd39f9280463e3c6a85bcfd0c5",
+  "guidance_hash": "1308a719593dff59275a3db233c88a88389387e12496e64118ca9fa660acedc4",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "curated-guidance"
+  }
+}

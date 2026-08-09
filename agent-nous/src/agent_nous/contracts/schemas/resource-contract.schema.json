@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "resource-contract.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "resource_id": {"type": "string", "pattern": "^[a-z][a-z0-9+.-]*://.+"},
+    "kind": {"enum": ["file", "directory", "schema", "api_contract", "config", "lockfile", "external_service", "git_ref"]},
+    "locator": {"type": "string", "minLength": 1},
+    "semantic_scope": {"type": "object", "additionalProperties": false, "properties": {"namespace": {"type": "string"}, "entity": {"type": "string"}, "facet": {"type": "string"}}, "required": ["namespace", "entity", "facet"]},
+    "parent_resource_ref": {"type": ["string", "null"]},
+    "aliases": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "version_ref": {"type": ["string", "null"]},
+    "conflict_class": {"enum": ["exclusive", "mergeable", "advisory"]},
+    "merge_strategy": {"type": "string", "minLength": 1},
+    "sensitivity": {"enum": ["normal", "sensitive"]}
+  },
+  "required": ["resource_id", "kind", "locator", "semantic_scope", "parent_resource_ref", "aliases", "version_ref", "conflict_class", "merge_strategy", "sensitivity"]
+}

@@ -1,0 +1,193 @@
+{
+  "title": "申請データの流れ",
+  "purpose": "申請の受付から検証・保存・監査までのデータフローを示す",
+  "diagram_type": "data-flow",
+  "audience": "業務担当者・開発担当者",
+  "canvas": {
+    "width": 13.333,
+    "height": 7.5
+  },
+  "layout": {
+    "direction": "left-to-right",
+    "grid": 0.25,
+    "safe_area": {
+      "x": 0.5,
+      "y": 1.25,
+      "w": 12.3,
+      "h": 5.25
+    }
+  },
+  "boundaries": [
+    {
+      "id": "processing",
+      "label": "処理",
+      "node_ids": [
+        "api",
+        "validate"
+      ],
+      "position": {
+        "x": 2.75,
+        "y": 2,
+        "w": 4.5,
+        "h": 3.25
+      },
+      "style": {
+        "fill": "EFF6FF",
+        "line": "93C5FD",
+        "line_style": "dashed",
+        "transparency": 8
+      }
+    },
+    {
+      "id": "records",
+      "label": "記録",
+      "node_ids": [
+        "db",
+        "audit"
+      ],
+      "position": {
+        "x": 7.5,
+        "y": 2,
+        "w": 4.5,
+        "h": 3.25
+      },
+      "style": {
+        "fill": "F0FDF4",
+        "line": "86EFAC",
+        "line_style": "solid",
+        "transparency": 8
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "id": "applicant",
+      "label": "申請者",
+      "kind": "actor",
+      "icon": "user",
+      "role": "申請を入力する",
+      "position": {
+        "x": 0.75,
+        "y": 3,
+        "w": 1.5,
+        "h": 1
+      }
+    },
+    {
+      "id": "api",
+      "label": "受付API",
+      "kind": "gateway",
+      "icon": "api",
+      "role": "申請を受け付ける",
+      "position": {
+        "x": 3,
+        "y": 3,
+        "w": 1.5,
+        "h": 1
+      }
+    },
+    {
+      "id": "validate",
+      "label": "検証処理",
+      "kind": "service",
+      "icon": "server",
+      "role": "形式・権限を検証",
+      "position": {
+        "x": 5.25,
+        "y": 3,
+        "w": 1.5,
+        "h": 1
+      }
+    },
+    {
+      "id": "db",
+      "label": "申請DB",
+      "kind": "data-store",
+      "icon": "database",
+      "role": "検証済みデータを保存",
+      "position": {
+        "x": 7.75,
+        "y": 3,
+        "w": 1.5,
+        "h": 1
+      }
+    },
+    {
+      "id": "audit",
+      "label": "監査ログ",
+      "kind": "data-store",
+      "icon": "storage",
+      "role": "操作履歴を保存",
+      "position": {
+        "x": 10.25,
+        "y": 3,
+        "w": 1.5,
+        "h": 1
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "input",
+      "from": "applicant",
+      "to": "api",
+      "label": "申請内容",
+      "relation": "data_flow",
+      "line_style": "solid",
+      "from_anchor": "right",
+      "to_anchor": "left"
+    },
+    {
+      "id": "validated",
+      "from": "api",
+      "to": "validate",
+      "label": "受付済みデータ",
+      "relation": "data_flow",
+      "line_style": "solid",
+      "from_anchor": "right",
+      "to_anchor": "left"
+    },
+    {
+      "id": "save",
+      "from": "validate",
+      "to": "db",
+      "label": "検証済み申請",
+      "relation": "data_flow",
+      "line_style": "solid",
+      "from_anchor": "right",
+      "to_anchor": "left"
+    },
+    {
+      "id": "audit-log",
+      "from": "db",
+      "to": "audit",
+      "label": "操作ログを送信",
+      "relation": "monitoring",
+      "line_style": "dotted",
+      "from_anchor": "right",
+      "to_anchor": "left"
+    }
+  ],
+  "legend_relations": [
+    "data_flow",
+    "monitoring"
+  ],
+  "annotations": [
+    {
+      "id": "scope",
+      "text": "データの受け渡しを左から右へ読む。監査ログは監視・テレメトリとして別の線種で示す。",
+      "position": {
+        "x": 0.6,
+        "y": 6.92,
+        "w": 11.4,
+        "h": 0.18
+      }
+    }
+  ],
+  "metadata": {
+    "version": "0.3.0",
+    "updated_at": "2026-08-09",
+    "author": "architecture-diagram-pptx example",
+    "assets": "neutral icon catalog; original SVG line icons"
+  }
+}

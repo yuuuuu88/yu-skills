@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "knowledge-questions.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": 1},
+    "task_id": {"$ref": "common.schema.json#/$defs/task_id"},
+    "loop_id": {"type": "string", "minLength": 1},
+    "revision": {"$ref": "common.schema.json#/$defs/revision"},
+    "transaction_id": {"type": "string", "pattern": "^tx-[A-Za-z0-9._-]+$"},
+    "questions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "question_id": {"type": "string", "minLength": 1},
+          "question": {"type": "string", "minLength": 1},
+          "reason": {"type": "string", "minLength": 1},
+          "impact": {"enum": ["high", "medium", "low"]},
+          "required_before": {"enum": ["plan_complete", "implementation_step", "review_complete"]},
+          "status": {"enum": ["open", "answered", "deferred", "cancelled"]},
+          "answer_evidence": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "record_type": {"enum": ["source", "claim"]},
+                "record_id": {"type": "string", "minLength": 1},
+                "content_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+              },
+              "required": ["record_type", "record_id", "content_hash"]
+            },
+            "uniqueItems": true
+          },
+          "record_revision": {"type": "integer", "minimum": 1},
+          "supersedes": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+          "content_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+        },
+        "required": ["question_id", "question", "reason", "impact", "required_before", "status", "answer_evidence", "record_revision", "supersedes", "content_hash"]
+      }
+    },
+    "updated_at": {"$ref": "common.schema.json#/$defs/timestamp"}
+  },
+  "required": ["schema_version", "task_id", "loop_id", "revision", "transaction_id", "questions", "updated_at"]
+}

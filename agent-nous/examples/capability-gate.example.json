@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "min_ncs": 70,
+  "min_reliability": 1.0,
+  "max_regressions": 0,
+  "require_holdout": false
+}

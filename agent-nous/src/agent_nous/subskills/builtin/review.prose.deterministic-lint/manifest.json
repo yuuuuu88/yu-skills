@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "review.prose.deterministic-lint",
+  "version": "1.0.0",
+  "phase": "review",
+  "core": {
+    "name": "Deterministic Japanese Lint Gate",
+    "originator": "Nous independent synthesis",
+    "source_url": "https://github.com/textlint/textlint",
+    "operational_rule": "lintの合格を文章品質全体の証明とせず、ルールの版、設定、対象範囲、除外理由を証拠に残す。"
+  },
+  "capabilities": [
+    "review.independence",
+    "review.consistency"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 81,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "093e2ff57bdff0a2d23089288c2a25805da3fd24127e322d8e38cba4ae623227",
+  "guidance_hash": "c8a5fd2e3106d93d868bd7922730391ee42b07108125556fb2e7b00b7a623889",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "independent-synthesis"
+  }
+}

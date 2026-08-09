@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "plan.slicing.invest",
+  "version": "1.0.0",
+  "phase": "plan",
+  "core": {
+    "name": "INVEST",
+    "originator": "Bill Wake",
+    "source_url": "https://xp123.com/invest-in-good-stories-and-smart-tasks/",
+    "operational_rule": "Check work units for independence, negotiability, value, estimability, size, and testability; split vertically when needed."
+  },
+  "capabilities": [
+    "plan.slicing",
+    "parallel.decompose"
+  ],
+  "roles": [
+    "primary",
+    "advisor",
+    "validator"
+  ],
+  "priority": 80,
+  "enabled": true,
+  "entrypoint": "guidance.md",
+  "content_hash": "e3556334eabfaa3d5fc481cc7d4d2fd88298a0549f6705ed7d9762433080ce74",
+  "guidance_hash": "d8bd1cdb2179c69dab5deabc2f9ec6c40de2e0db4e9c87df7c746e4bf6bd1cb7",
+  "provenance": {
+    "source_type": "public_reference",
+    "license_status": "reference_only_not_vendored",
+    "source_revision": "source-url-reference; no source code vendored",
+    "reviewed_at": "2026-08-04",
+    "transformation": "curated-guidance"
+  }
+}

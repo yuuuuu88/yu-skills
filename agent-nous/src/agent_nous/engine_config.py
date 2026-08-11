@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from .errors import ValidationError
+from .executor.validation import ValidationCommandPolicy
 from .ids import validate_runtime_id
 from .research import ResearchPolicy
 from .subskills import SubskillRuntimeConfig
@@ -27,6 +28,7 @@ _ENGINE_KEYS = {
     "min_cycles",
     "max_cycles",
     "max_steps",
+    "no_progress_limit",
     "lease_seconds",
     "agent_timeout_seconds",
     "subskills",
@@ -37,7 +39,7 @@ _ENGINE_KEYS = {
     "research",
 }
 _AGENT_KEYS = {"plan", "implement", "review"}
-_REVIEW_KEYS = {"mode", "reviewers", "max_parallel", "fallback"}
+_REVIEW_KEYS = {"mode", "reviewers", "max_parallel", "fallback", "primary_reviewer_id", "secondary_policy"}
 _REVIEWER_KEYS = {"id", "perspective", "command"}
 _SUBSKILL_KEYS = {"enabled", "roots", "limit", "role", "phase_capabilities"}
 _SUBAGENT_KEYS = {"required", "mode"}
@@ -47,14 +49,18 @@ _SUBAGENT_KEYS = {"required", "mode"}
 class EngineConfig:
     agent_commands: dict[str, tuple[str, ...]]
     allowed_processes: tuple[tuple[str, ...], ...] = ()
+    validation_policies: tuple[ValidationCommandPolicy, ...] = ()
     review_mode: str = "single"
     reviewer_commands: tuple[tuple[str, tuple[str, ...]], ...] = ()
     reviewer_perspectives: tuple[tuple[str, str], ...] = ()
     review_max_parallel: int = 3
     review_fallback: str = "single"
+    review_primary_reviewer_id: str | None = None
+    review_secondary_policy: str = "parallel"
     min_cycles: int = 1
     max_cycles: int = 3
     max_steps: int = 12
+    no_progress_limit: int = 2
     lease_seconds: int = 300
     agent_timeout_seconds: float = 180
     subagents_required: bool = True
@@ -83,9 +89,15 @@ class EngineConfig:
     )
 
     def payload(self) -> dict[str, Any]:
+        policies = self.validation_policies or tuple(
+            ValidationCommandPolicy(command) for command in self.allowed_processes
+        )
         return {
             "agent_commands": {key: list(value) for key, value in self.agent_commands.items()},
             "allowed_processes": [list(value) for value in self.allowed_processes],
+            "validation": {
+                "allowed_processes": [policy.public() for policy in policies]
+            },
             "review_mode": self.review_mode,
             "reviewers": [
                 {"id": reviewer_id, "perspective": perspective, "command": list(dict(self.reviewer_commands)[reviewer_id])}
@@ -93,9 +105,12 @@ class EngineConfig:
             ],
             "review_max_parallel": self.review_max_parallel,
             "review_fallback": self.review_fallback,
+            "review_primary_reviewer_id": self.review_primary_reviewer_id,
+            "review_secondary_policy": self.review_secondary_policy,
             "min_cycles": self.min_cycles,
             "max_cycles": self.max_cycles,
             "max_steps": self.max_steps,
+            "no_progress_limit": self.no_progress_limit,
             "lease_seconds": self.lease_seconds,
             "agent_timeout_seconds": self.agent_timeout_seconds,
             "subagents": {
@@ -231,6 +246,8 @@ def load_engine_config(path: Path | None) -> EngineConfig:
     reviewer_perspectives: tuple[tuple[str, str], ...] = ()
     review_max_parallel = 3
     review_fallback = "single"
+    review_primary_reviewer_id: str | None = None
+    review_secondary_policy = "parallel"
     raw_review = section.get("review")
     if raw_review is not None:
         if not isinstance(raw_review, Mapping):
@@ -244,6 +261,14 @@ def load_engine_config(path: Path | None) -> EngineConfig:
         review_fallback = raw_review.get("fallback", "single")
         if review_fallback not in {"single", "human", "none"}:
             raise ValidationError("engine.review.fallback must be single, human, or none")
+        review_primary_reviewer_id = raw_review.get("primary_reviewer_id")
+        if review_primary_reviewer_id is not None:
+            if not isinstance(review_primary_reviewer_id, str):
+                raise ValidationError("engine.review.primary_reviewer_id must be a string or null")
+            validate_runtime_id(review_primary_reviewer_id, "engine.review.primary_reviewer_id")
+        review_secondary_policy = raw_review.get("secondary_policy", "parallel")
+        if review_secondary_policy not in {"parallel", "after_primary_success"}:
+            raise ValidationError("engine.review.secondary_policy must be parallel or after_primary_success")
         raw_reviewers = raw_review.get("reviewers", [])
         if not isinstance(raw_reviewers, list):
             raise ValidationError("engine.review.reviewers must be a list")
@@ -274,6 +299,8 @@ def load_engine_config(path: Path | None) -> EngineConfig:
             raise ValidationError("cross-review supports at most two reviewers")
         if review_mode == "single" and parsed_commands:
             raise ValidationError("engine.review.reviewers require engine.review.mode=cross")
+        if review_primary_reviewer_id is not None and review_primary_reviewer_id not in seen_ids:
+            raise ValidationError("engine.review.primary_reviewer_id must name a configured reviewer")
         raw_max_parallel = raw_review.get("max_parallel", 3)
         review_max_parallel = _integer(raw_max_parallel, "engine.review.max_parallel", minimum=1, maximum=8)
         if parsed_commands:
@@ -297,7 +324,20 @@ def load_engine_config(path: Path | None) -> EngineConfig:
         raw_allowed = section["allowed_processes"]
     if not isinstance(raw_allowed, list) or not raw_allowed:
         raise ValidationError("engine.validation.allowed_processes must be a nonempty list")
-    allowed = tuple(_command(item, f"engine.allowed_processes[{index}]") for index, item in enumerate(raw_allowed))
+    policies: list[ValidationCommandPolicy] = []
+    for index, item in enumerate(raw_allowed):
+        label = f"engine.validation.allowed_processes[{index}]"
+        if isinstance(item, Mapping):
+            # Normalize human-friendly command strings before the typed
+            # policy parser validates the runtime-only settings.
+            normalized = dict(item)
+            normalized["command"] = list(_command(item.get("command"), f"{label}.command"))
+            policies.append(ValidationCommandPolicy.from_value(normalized, label=label))
+        else:
+            policies.append(ValidationCommandPolicy.from_value(item, label=label))
+    if not policies:
+        raise ValidationError("engine.validation.allowed_processes must be a nonempty list")
+    allowed = tuple(policy.command for policy in policies)
 
     max_cycles = _integer(section.get("max_cycles", 3), "engine.max_cycles", minimum=1, maximum=100)
     min_cycles = _integer(section.get("min_cycles", 1), "engine.min_cycles", minimum=1, maximum=100)
@@ -307,6 +347,7 @@ def load_engine_config(path: Path | None) -> EngineConfig:
     if min_cycles > 1 and max_steps < min_cycles * 3:
         raise ValidationError("engine.max_steps must allow at least three phases per min_cycles")
     lease_seconds = _integer(section.get("lease_seconds", 300), "engine.lease_seconds", minimum=30, maximum=86400)
+    no_progress_limit = _integer(section.get("no_progress_limit", 2), "engine.no_progress_limit", minimum=2, maximum=3)
     timeout = section.get("agent_timeout_seconds", 180)
     if not isinstance(timeout, (int, float)) or isinstance(timeout, bool) or timeout <= 0:
         raise ValidationError("engine.agent_timeout_seconds must be a positive number")
@@ -375,14 +416,18 @@ def load_engine_config(path: Path | None) -> EngineConfig:
     return EngineConfig(
         agent_commands=commands,
         allowed_processes=allowed,
+        validation_policies=tuple(policies),
         review_mode=review_mode,
         reviewer_commands=reviewer_commands,
         reviewer_perspectives=reviewer_perspectives,
         review_max_parallel=review_max_parallel,
         review_fallback=review_fallback,
+        review_primary_reviewer_id=review_primary_reviewer_id,
+        review_secondary_policy=review_secondary_policy,
         min_cycles=min_cycles,
         max_cycles=max_cycles,
         max_steps=max_steps,
+        no_progress_limit=no_progress_limit,
         lease_seconds=lease_seconds,
         agent_timeout_seconds=float(timeout),
         subagents_required=subagents_required,

@@ -10,6 +10,8 @@
       "mode": "cross",
       "fallback": "single",
       "max_parallel": 2,
+      "primary_reviewer_id": "primary",
+      "secondary_policy": "after_primary_success",
       "reviewers": [
         {
           "id": "primary",
@@ -25,12 +27,16 @@
     },
     "validation": {
       "allowed_processes": [
-        ["/usr/bin/python3", "-m", "pytest"]
+        {
+          "command": ["/usr/bin/python3", "-m", "pytest"],
+          "allowed_side_effects": [".pytest_cache", ".pytest_cache/**", "**/__pycache__", "**/__pycache__/**", "**/*.pyc"]
+        }
       ]
     },
     "min_cycles": 1,
     "max_cycles": 10,
     "max_steps": 30,
+    "no_progress_limit": 2,
     "lease_seconds": 600,
     "agent_timeout_seconds": 300,
     "subagents": {

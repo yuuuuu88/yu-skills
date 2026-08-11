@@ -48,6 +48,10 @@ class ActionDescriptor:
     # admitted.  It is intentionally excluded from both the action digest and
     # canonical action record; lease tokens must never become durable evidence.
     lease_token: str | None = None
+    # Optional typed policy for a disposable validation process.  Runtime
+    # environment values are never put here; the engine stores only the
+    # redacted public representation returned by ValidationSpec.public().
+    validation: dict[str, object] | None = None
 
     def digest_payload(self) -> dict[str, object]:
         value = asdict(self)
@@ -59,6 +63,11 @@ class ActionDescriptor:
         value.pop("expected_state_revision", None)
         value.pop("request_id", None)
         value.pop("lease_token", None)
+        # Preserve the v1 digest for actions that do not carry a validation
+        # policy.  The optional field was added after durable action records
+        # already existed.
+        if value.get("validation") is None:
+            value.pop("validation", None)
         return value
 
     @property
@@ -90,6 +99,7 @@ class ActionDescriptor:
             "environment": self.environment,
             "reservation_ids": list(self.reservation_ids),
             "resource_ids": list(self.resource_ids),
+            **({"validation": self.validation} if self.validation is not None else {}),
         }
 
 

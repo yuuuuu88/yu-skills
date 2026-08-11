@@ -1250,6 +1250,34 @@ class TaskStore:
             )
             return {"observation": observation, "state": new}
 
+    def record_runtime_diagnostic(self, diagnostic: dict[str, Any]) -> dict[str, Any]:
+        """Append a redacted provider/validation diagnostic without revision churn.
+
+        Diagnostics are operational evidence, not a phase transition.  They
+        therefore live in an append-only task-local JSONL file and do not alter
+        the Task State CAS revision.  The schema and secret gate still apply,
+        so a malformed or sensitive diagnostic is rejected before persistence.
+        """
+        if not isinstance(diagnostic, dict):
+            raise ValidationError("runtime diagnostic must be an object")
+        value = {**diagnostic, "schema_version": 1, "recorded_at": diagnostic.get("recorded_at", now())}
+        self.schemas.validate("runtime-diagnostic", value)
+        if secret_summary(value):
+            raise ValidationError("high-confidence secret blocked from runtime diagnostic")
+        task_id = value.get("task_id")
+        # ProviderDiagnostic intentionally does not carry task_id in its public
+        # shape.  The caller can bind it through the active store path.
+        with self.lock():
+            if isinstance(task_id, str):
+                self._read_task_unlocked(task_id)
+            # A store is scoped to one task only when the caller adds task_id;
+            # engine diagnostics use the task id as a private envelope field.
+            if not isinstance(task_id, str):
+                raise ValidationError("runtime diagnostic requires task_id")
+            path = self._path(task_id) / "diagnostics.jsonl"
+            append_jsonl(path, value)
+        return value
+
     @staticmethod
     def _gateway_outcome(outcome: str) -> str:
         return {"grant": "allow", "deny": "deny", "approval_required": "interrupt_for_approval", "unsupported": "unsupported"}[outcome]
@@ -1273,6 +1301,7 @@ class TaskStore:
             "environment": action.environment,
             "reservation_ids": action.reservation_ids,
             "resource_ids": action.resource_ids,
+            "validation": action.validation,
         }
 
     def _record_secret_violation_locked(
@@ -4078,6 +4107,24 @@ class TaskStore:
                         self.schemas.validate("event", value)
                         events.append(value)
 
+            runtime_diagnostics: list[dict[str, Any]] = []
+            diagnostics_path = task_path / "diagnostics.jsonl"
+            if diagnostics_path.is_file():
+                for line in read_text_nofollow(diagnostics_path).splitlines():
+                    if not line.strip():
+                        continue
+                    value = json.loads(line)
+                    self.schemas.validate("runtime-diagnostic", value)
+                    if value.get("task_id") != task_id:
+                        raise ValidationError("runtime diagnostic task_id does not match its task directory")
+                    runtime_diagnostics.append({
+                        key: value.get(key)
+                        for key in (
+                            "diagnostic_id", "category", "phase", "cycle", "provider",
+                            "action_id", "error_path", "actual_type", "retryable", "recorded_at",
+                        )
+                    } | {"message": value.get("message")})
+
             issues: list[dict[str, Any]] = []
             if not checkpoint:
                 issues.append({"code": "checkpoint_missing", "next_action": "rebuild or recover the latest checkpoint"})
@@ -4140,6 +4187,10 @@ class TaskStore:
                 durability.append({key: observation.get(key) for key in ("status", "branch", "local_head", "remote_head", "artifact_commit")})
 
             event_summary = [{"event_id": event["event_id"], "type": event["type"], "revision": event["revision"]} for event in events[-50:]]
+            diagnostic_counts: dict[str, int] = {}
+            for diagnostic in runtime_diagnostics:
+                category = str(diagnostic.get("category"))
+                diagnostic_counts[category] = diagnostic_counts.get(category, 0) + 1
             return {
                 "schema_version": 1,
                 "task_id": task_id,
@@ -4152,6 +4203,9 @@ class TaskStore:
                 "reservations": reservations,
                 "actions": actions,
                 "durability": durability,
+                "runtime_diagnostics": runtime_diagnostics[-50:],
+                "runtime_diagnostic_count": len(runtime_diagnostics),
+                "runtime_diagnostic_category_counts": dict(sorted(diagnostic_counts.items())),
                 "pending_human_question_count": len(state.get("pending_human_questions", [])),
                 "issues": issues,
                 "repair_required": bool(issues),
@@ -4159,6 +4213,7 @@ class TaskStore:
                     "task": f"tasks/{task_id}",
                     "checkpoint": f"tasks/{task_id}/checkpoints/latest.json",
                     "events": f"tasks/{task_id}/events.jsonl",
+                    "diagnostics": f"tasks/{task_id}/diagnostics.jsonl",
                 },
                 "context_revision": context.get("revision"),
             }

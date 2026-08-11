@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "runtime-diagnostic.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": 1},
+    "diagnostic_id": {"type": "string", "minLength": 1},
+    "task_id": {"$ref": "common.schema.json#/$defs/task_id"},
+    "category": {"enum": ["invalid_json", "invalid_envelope", "invalid_schema", "missing_required_field", "invalid_managed_action", "output_too_large", "timeout", "provider_process_failure", "write_proposal_conflict", "unsafe_path", "validation_environment_failure"]},
+    "phase": {"type": ["string", "null"], "enum": ["plan", "implement", "review", null]},
+    "cycle": {"type": ["integer", "null"], "minimum": 1},
+    "provider": {"type": ["string", "null"]},
+    "action_id": {"type": ["string", "null"]},
+    "error_path": {"type": "string", "minLength": 1},
+    "expected": {"type": ["string", "null"]},
+    "actual_type": {"type": ["string", "null"]},
+    "stderr_summary": {"type": "object"},
+    "retryable": {"type": "boolean"},
+    "message": {"type": "string", "minLength": 1},
+    "details": {"type": "object"},
+    "recorded_at": {"$ref": "common.schema.json#/$defs/timestamp"}
+  },
+  "required": [
+    "schema_version", "diagnostic_id", "task_id", "category", "phase", "cycle",
+    "provider", "action_id", "error_path", "expected", "actual_type",
+    "stderr_summary", "retryable", "message", "details", "recorded_at"
+  ]
+}

@@ -12,9 +12,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from ..domain import ActionDescriptor, Approval, PolicyGateway
-from ..errors import PolicyDeniedError, UnsupportedActionError
+from ..diagnostics import safe_text_summary
+from ..errors import PolicyDeniedError, UnsupportedActionError, ValidationError
 from ..taskctl import TaskStore
 from .sandbox import CodexSandbox
+from .validation import ValidationSpec
 
 
 # Local virtual environments are runtime dependencies, not source inputs.
@@ -49,9 +51,70 @@ def _hash_path(path: Path) -> str | None:
 def _tree_snapshot(root: Path) -> dict[str, str]:
     result: dict[str, str] = {}
     for path in root.rglob("*"):
-        if path.is_file() and ".git" not in path.parts:
-            result[str(path.relative_to(root))] = _hash_path(path) or ""
+        if ".git" in path.parts:
+            continue
+        relative = str(path.relative_to(root))
+        if path.is_symlink():
+            # A validation process creating a symlink is an observable change,
+            # even when its target happens to be harmless.
+            try:
+                result[relative] = f"symlink:{path.readlink()}"
+            except OSError:
+                result[relative] = "symlink:<unreadable>"
+        elif path.is_dir():
+            try:
+                result[relative] = f"directory:{stat.S_IMODE(path.stat().st_mode):o}"
+            except OSError:
+                result[relative] = "directory:<unreadable>"
+        elif path.is_file():
+            try:
+                mode = stat.S_IMODE(path.stat().st_mode)
+            except OSError:
+                mode = 0
+            result[relative] = f"file:{mode:o}:{_hash_path(path) or ''}"
+        else:
+            # FIFOs, sockets, device nodes, and other special files must not
+            # disappear from the diff simply because they have no byte hash.
+            try:
+                metadata = path.lstat()
+                result[relative] = f"special:{stat.S_IFMT(metadata.st_mode):o}:{stat.S_IMODE(metadata.st_mode):o}"
+            except OSError:
+                result[relative] = "special:<unreadable>"
     return result
+
+
+def _changed_paths(before: dict[str, str], after: dict[str, str]) -> list[str]:
+    return sorted(
+        path
+        for path in {*before, *after}
+        if before.get(path) != after.get(path)
+    )
+
+
+def _validation_failure_category(returncode: int, stderr: str) -> str | None:
+    if returncode in {124, 126, 127}:
+        return "validation_environment_failure"
+    lowered = stderr.lower()
+    if "executor timeout" in lowered or "command not found" in lowered:
+        return "validation_environment_failure"
+    # A traceback containing FileNotFoundError/ImportError is usually a test
+    # or application failure, not proof that the validation runner itself is
+    # unavailable.  Only classify import/missing-file markers as environment
+    # failures when the process failed before it entered user code.
+    has_traceback = "traceback (most recent call last)" in lowered
+    early_environment_markers = (
+        "can't open file",
+        "no module named",
+        "permission denied",
+        "modulenotfounderror",
+        "importerror",
+        "cannot import",
+        "sandbox",
+        "no such file or directory",
+    )
+    if not has_traceback and any(marker in lowered for marker in early_environment_markers):
+        return "validation_environment_failure"
+    return None
 
 
 def _write_text_dirfd(root_fd: int, relative: Path, content: str) -> None:
@@ -287,9 +350,17 @@ class ManagedExecutor:
         finished = self.store.finish_managed_action(action.task_id, int(state["revision"]), self.actor, str(grant["lease_token"]), action.action_id, str(grant["grant_id"]), 0, self._postflight(action, 0))
         return ExecutionResult(action.action_id, action.digest, str(grant["grant_id"]), 0, "", "", began, ended, int(finished["state"]["revision"]))
 
-    def run_process(self, action: ActionDescriptor, approvals: tuple[Approval, ...] = (), timeout_seconds: float = 60) -> ExecutionResult:
+    def run_process(
+        self,
+        action: ActionDescriptor,
+        approvals: tuple[Approval, ...] = (),
+        timeout_seconds: float = 60,
+        validation: ValidationSpec | None = None,
+    ) -> ExecutionResult:
         if action.kind not in {"process.run", "git.local"} or not action.command:
             raise UnsupportedActionError("run_process requires a supported managed command action")
+        validation_spec = validation or ValidationSpec()
+        effective_timeout = validation_spec.timeout_seconds or timeout_seconds
         started = self._start(action, approvals)
         workspace = Path(tempfile.mkdtemp(prefix="process-workspace-", dir=self.runtime_root))
         root_fd: int | None = None
@@ -302,16 +373,16 @@ class ManagedExecutor:
                 assert isinstance(scope, dict)
                 root_fd = _open_bound_repository_root(str(scope["repository_root"]), str(scope["repository_root_identity"]))
             except OSError as exc:
-                return self._finish_without_effect(action, started, 74, "process source confinement rejected", type(exc).__name__)
+                return self._finish_without_effect(action, started, 74, "process source confinement rejected", type(exc).__name__, failure_category="safety_gap")
             try:
                 _copy_source_snapshot_no_follow(root_fd, workspace / "repo")
             except OSError as exc:
-                return self._finish_without_effect(action, started, 74, "process snapshot confinement rejected", type(exc).__name__)
+                return self._finish_without_effect(action, started, 74, "process snapshot confinement rejected", type(exc).__name__, failure_category="safety_gap")
             copied_root = workspace / "repo"
             try:
                 _assert_source_tree_has_no_symlinks(copied_root)
             except OSError as exc:
-                return self._finish_without_effect(action, started, 74, "process copy confinement rejected", type(exc).__name__)
+                return self._finish_without_effect(action, started, 74, "process copy confinement rejected", type(exc).__name__, failure_category="safety_gap")
             before = _tree_snapshot(copied_root)
             # Copying can be slow.  Verify once more at the actual process
             # start boundary so an expired/revoked lease cannot authorize a
@@ -319,7 +390,22 @@ class ManagedExecutor:
             validation_tmp = workspace / "tmp"
             validation_tmp.mkdir(mode=0o700)
             self.store.verify_execution_grant(action.task_id, int(started["state"]["revision"]), self.actor, str(started["grant"]["lease_token"]), action.action_id, str(started["grant"]["grant_id"]))
-            return self._execute(action, started, action.command, copied_root, timeout_seconds, postflight_root=copied_root, before_snapshot=before, validation_tmp=validation_tmp)
+            try:
+                validation_cwd = validation_spec.resolve_cwd(copied_root)
+            except (OSError, ValueError, ValidationError) as exc:
+                return self._finish_without_effect(action, started, 74, "validation cwd is unavailable in the disposable workspace", type(exc).__name__, failure_category="validation_environment_failure")
+            return self._execute(
+                action,
+                started,
+                action.command,
+                copied_root,
+                effective_timeout,
+                postflight_root=copied_root,
+                before_snapshot=before,
+                validation_tmp=validation_tmp,
+                validation_spec=validation_spec,
+                validation_cwd=validation_cwd,
+            )
         finally:
             # Runtime workspaces are adapter scratch space, never durable Task
             # evidence.  Probe summaries are persisted through TaskStore.
@@ -574,20 +660,51 @@ class ManagedExecutor:
             if root_fd is not None:
                 os.close(root_fd)
 
-    def _finish_without_effect(self, action: ActionDescriptor, started: dict[str, object], returncode: int, reason: str, error_class: str) -> ExecutionResult:
+    def _finish_without_effect(
+        self,
+        action: ActionDescriptor,
+        started: dict[str, object],
+        returncode: int,
+        reason: str,
+        error_class: str,
+        *,
+        failure_category: str | None = None,
+    ) -> ExecutionResult:
         grant = started["grant"]
         state = started["state"]
         assert isinstance(grant, dict) and isinstance(state, dict)
         timestamp = datetime.now(timezone.utc).isoformat()
-        finished = self.store.finish_managed_action(action.task_id, int(state["revision"]), self.actor, str(grant["lease_token"]), action.action_id, str(grant["grant_id"]), returncode, {"result": "fail", "facts": {"reason": reason, "error_class": error_class}, "redaction_summary": {}})
+        facts = {
+            "reason": reason,
+            "error_class": error_class,
+            "returncode": returncode,
+            "actual_changed_paths": [],
+            "unexpected_changed_paths": [],
+        }
+        if failure_category is not None:
+            facts["failure_category"] = failure_category
+        finished = self.store.finish_managed_action(action.task_id, int(state["revision"]), self.actor, str(grant["lease_token"]), action.action_id, str(grant["grant_id"]), returncode, {"result": "fail", "facts": facts, "redaction_summary": {}})
         return ExecutionResult(action.action_id, action.digest, str(grant["grant_id"]), returncode, "", reason, timestamp, timestamp, int(finished["state"]["revision"]))
 
-    def _execute(self, action: ActionDescriptor, started: dict[str, object], argv: tuple[str, ...], root: Path, timeout_seconds: float = 60, postflight_root: Path | None = None, before_snapshot: dict[str, str] | None = None, validation_tmp: Path | None = None) -> ExecutionResult:
+    def _execute(
+        self,
+        action: ActionDescriptor,
+        started: dict[str, object],
+        argv: tuple[str, ...],
+        root: Path,
+        timeout_seconds: float = 60,
+        postflight_root: Path | None = None,
+        before_snapshot: dict[str, str] | None = None,
+        validation_tmp: Path | None = None,
+        validation_spec: ValidationSpec | None = None,
+        validation_cwd: Path | None = None,
+    ) -> ExecutionResult:
         grant = started["grant"]
         assert isinstance(grant, dict)
         state = started["state"]
         assert isinstance(state, dict)
         began = datetime.now(timezone.utc).isoformat()
+        spec = validation_spec or ValidationSpec()
         completed = self.sandbox.run(
             argv,
             writable_root=root,
@@ -596,22 +713,94 @@ class ManagedExecutor:
             # the disposable repository snapshot.  Any other mutation is
             # still detected by the before/after tree probe below.
             extra_env={
+                **spec.environment_dict(),
+                # These two controls are owned by the managed adapter.  A
+                # validation policy may add variables, but cannot re-enable
+                # bytecode writes or redirect its temporary files into the
+                # copied source tree.
                 "PYTHONDONTWRITEBYTECODE": "1",
                 **({"TMPDIR": str(validation_tmp)} if validation_tmp is not None else {}),
             },
             write_roots=(validation_tmp,) if validation_tmp is not None else (),
+            cwd=validation_cwd or root,
         )
         ended = datetime.now(timezone.utc).isoformat()
         returncode = completed.returncode
         postflight = self._postflight(action, returncode)
+        base_facts = dict(postflight.get("facts", {}))
+        base_facts.update({"started_at": began, "completed_at": ended})
+        postflight = {**postflight, "facts": base_facts}
         if postflight_root is not None and before_snapshot is not None:
             after = _tree_snapshot(postflight_root)
-            changed = sorted({*before_snapshot, *after} - {path for path in {*before_snapshot, *after} if before_snapshot.get(path) == after.get(path)})
-            # A process executes in a disposable copy.  v1 accepts only
-            # read-only validation commands; process-produced repository
-            # changes are fail-closed instead of being copied back broadly.
-            if changed:
+            changed = _changed_paths(before_snapshot, after)
+            unexpected = [path for path in changed if not spec.is_allowed_side_effect(path)]
+            failure_category = _validation_failure_category(returncode, completed.stderr)
+            stdout_bytes = len(completed.stdout.encode("utf-8", errors="replace"))
+            stderr_bytes = len(completed.stderr.encode("utf-8", errors="replace"))
+            output_too_large = spec.max_output_bytes is not None and max(stdout_bytes, stderr_bytes) > spec.max_output_bytes
+            if output_too_large:
+                returncode = 75
+                failure_category = "validation_environment_failure"
+            # A process executes in a disposable copy.  Generated caches and
+            # logs are allowed only when the command policy names them.  Any
+            # other mutation remains fail-closed and is never copied back.
+            if unexpected:
                 returncode = 73
-                postflight = {"result": "fail", "target_fingerprint": str(postflight_root), "facts": {"returncode": returncode, "actual_changed_paths": changed, "reason": "process wrote inside isolated workspace"}, "redaction_summary": {}}
+                failure_category = "safety_gap"
+                postflight = {
+                    "result": "fail",
+                    "target_fingerprint": str(postflight_root),
+                    "facts": {
+                        "returncode": returncode,
+                        "actual_changed_paths": changed,
+                        "unexpected_changed_paths": unexpected,
+                        "allowed_side_effects": list(spec.allowed_side_effects),
+                        "reason": "process wrote inside isolated workspace",
+                        "failure_category": failure_category,
+                        "started_at": began,
+                        "completed_at": ended,
+                        "validation_cwd": spec.cwd,
+                        "stdout_bytes": stdout_bytes,
+                        "stderr_bytes": stderr_bytes,
+                        "stderr_summary": safe_text_summary(completed.stderr),
+                    },
+                    "redaction_summary": {},
+                }
+            elif output_too_large:
+                postflight = {
+                    "result": "fail",
+                    "target_fingerprint": str(postflight_root),
+                    "facts": {
+                        "returncode": returncode,
+                        "failure_category": failure_category,
+                        "reason": "validation process output exceeded configured bound",
+                        "stdout_bytes": stdout_bytes,
+                        "stderr_bytes": stderr_bytes,
+                        "max_output_bytes": spec.max_output_bytes,
+                        "started_at": began,
+                        "completed_at": ended,
+                        "validation_cwd": spec.cwd,
+                        "actual_changed_paths": changed,
+                        "unexpected_changed_paths": [],
+                        "allowed_side_effects": list(spec.allowed_side_effects),
+                        "stderr_summary": safe_text_summary(completed.stderr),
+                    },
+                    "redaction_summary": {},
+                }
+            else:
+                facts = dict(postflight.get("facts", {}))
+                facts.update(
+                    {
+                        "actual_changed_paths": changed,
+                        "unexpected_changed_paths": [],
+                        "allowed_side_effects": list(spec.allowed_side_effects),
+                        "failure_category": failure_category or ("test_gap" if returncode != 0 else None),
+                        "validation_cwd": spec.cwd,
+                        "stdout_bytes": stdout_bytes,
+                        "stderr_bytes": stderr_bytes,
+                        "stderr_summary": safe_text_summary(completed.stderr),
+                    }
+                )
+                postflight = {**postflight, "facts": facts}
         finished = self.store.finish_managed_action(action.task_id, int(state["revision"]), self.actor, str(grant["lease_token"]), action.action_id, str(grant["grant_id"]), returncode, postflight)
         return ExecutionResult(action.action_id, action.digest, str(grant["grant_id"]), returncode, completed.stdout, completed.stderr, began, ended, int(finished["state"]["revision"]))

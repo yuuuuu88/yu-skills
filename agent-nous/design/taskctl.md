@@ -835,6 +835,10 @@ Event Journalへcommand、request ID、actor identity、previous / current revis
 
 secret、full Source、full conversation、credential付きURLを記録しない。stderr logはsession diagnosticであり、resume入力には使わない。
 
+Provider / validationの失敗はTask-local `diagnostics.jsonl`へappend-onlyで保存する。各行は`runtime-diagnostic.schema.json`に適合し、category、phase、cycle、provider、action、JSON path、actual type、retryability、redacted stderr summaryを持つ。diagnosticは運用証拠であり、Task State revisionを消費しない。
+
+`diagnose`はdiagnosticの本文を再生せず、直近50件、category別件数、safe message、canonical refだけを返す。validation postflightは別のevidence fileに`returncode`、実行時間、変更path、failure categoryを保持し、pytest cache等の許可副作用と予期しないsource変更を区別する。
+
 ## Versioning
 
 ```txt

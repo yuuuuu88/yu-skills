@@ -245,6 +245,12 @@ Humanへ戻すrisk条件、事前承認、質問のblocking scope、回答保存
 
 この場合、Reviewは `needs_human_input` に切り替える。
 
+実装上は、Review outputの分類・failure category・blocking issueを正規化したfailure signatureをcycle間で比較する。`managed_action_refs`も`changed_artifacts`もなく、同じsignatureが続く場合は進展なしと判定する。デフォルト2回、設定可能範囲2〜3回で、追加の自動Planを行わず、`replan`または`stop`を持つHuman Questionを保存して`waiting_human`へ遷移する。新しいmanaged effectまたは実際のartifact変更が確認された場合はstreakをリセットする。
+
+Providerの一時失敗は同じphaseを1回だけretryする。retryは同じphase boundaryで行い、redacted diagnosisと必要なscopeだけを渡す。二度目の失敗、schema不正、unsafe path、同じmanaged actionのconflictは同じcycleで無限に再試行しない。
+
+Reviewの`review_classification`は、コード問題と検証環境・provider問題を区別する。環境エラーは`validation_environment_gap`、provider出力不正は`provider_gap`または`schema_gap`として保存する。検証環境エラー・安全境界違反はコード不備と断定せず、Review artifactに原因とevidenceを残したうえで`needs_human_input`へ止める。人間が環境を直して同じReview境界を再開するか、再Plan・停止を選ぶ。finding schema不正は具体的なJSON pathを`finding_schema_errors`へ残す。
+
 ## 推奨する初期ポリシー
 
 最初は以下の安全側ポリシーにする。
@@ -265,9 +271,10 @@ Humanへ戻すrisk条件、事前承認、質問のblocking scope、回答保存
 - `AgentBackend.launch()` でPlan / Implement / Review Agentをphaseごとに起動する。
 - Implementの `action_proposals` とReviewの `validation_proposals` は、親Engineが `ManagedExecutor` で実行する。Agent出力だけでは変更・検証完了にならない。
 - 実行済みActionのpostflight evidenceをphase artifactへ結び、`taskctl`へlease付きで記録する。
-- Reviewが `needs_plan` を返す、またはmanaged validationが失敗すると、canonical Stateの次cycleから再Planする。
+- Reviewが `needs_plan` を返す、または実行済みvalidationがコード/test問題として失敗すると、canonical Stateの次cycleから再Planする。cwd・依存・timeoutなどのvalidation環境失敗やscope escapeは、無条件に再Planせず`needs_human_input`で環境修正・再開または停止を求める。
 - cycle上限に達した場合は推測で続行せず、Human Questionを保存して `waiting_human` で停止する。
 - lease期限切れはfresh engine起動時にreconcileしてから再開する。
+- Task reportにはtask/cycle/phase/provider/validationの時間、retry、managed action、changed artifact、failure分類、`needs_plan`、completion rate、current blocker、termination summaryを含める。運用診断は`taskctl diagnose`の`runtime_diagnostics`とpostflight evidenceを正本にする。
 
 ### Typed parallel Planの実行
 

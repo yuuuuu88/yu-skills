@@ -12,13 +12,14 @@ from pathlib import Path
 from typing import Any
 
 from .config import resolve_nous_home
-from .errors import NousError, UnsupportedActionError, ValidationError
+from .errors import NousError, ProviderFailureError, UnsupportedActionError, ValidationError
 from .engine_config import discover_config_path, load_engine_config, parse_subskill_runtime_config
 from .ids import validate_runtime_id
 from .eval.runner import EvalRunner
 from .eval.capability_runner import CapabilityEvalRunner
 from .eval.provider import ProviderEvalConfig, ProviderEvalRunner
 from .domain import ActionDescriptor, PolicyDecision, PolicyGateway
+from .executor.validation import ValidationCommandPolicy, ValidationSpec
 from .parallel import ParallelScheduler
 from .research import PublicWebResearchAdapter, ResearchPolicy
 from .taskctl import RequestLedger, TaskStore
@@ -153,6 +154,7 @@ def _prepare_engine_payload(args: argparse.Namespace, payload: dict[str, Any]) -
     """Fill the engine request from one friendly config file when needed."""
     config_path = getattr(args, "engine_config", None) or args.config or payload.get("engine_config_path")
     config = None
+    explicit_validation = "validation" in payload or "allowed_processes" in payload
     if config_path or not payload.get("agent_commands"):
         config_path = discover_config_path(config_path)
         if config_path is not None:
@@ -161,6 +163,11 @@ def _prepare_engine_payload(args: argparse.Namespace, payload: dict[str, Any]) -
             # priority overrides in the existing runtime contract.
             args.engine_config = str(config_path)
         config = load_engine_config(config_path)
+        # Keep runtime-only environment values in the in-process config
+        # object.  The public payload carries only command/policy metadata so
+        # request-ledger hashing never persists those values.
+        setattr(args, "_loaded_engine_config", config)
+        setattr(args, "_validation_from_config", not explicit_validation)
     if config is not None:
         defaults = config.payload()
         if isinstance(defaults.get("subskills"), dict) and isinstance(payload.get("subskills"), dict):
@@ -251,6 +258,15 @@ def _action_descriptor(payload: dict[str, Any], task_id: str, expected_revision:
     action_task_id = str(value.get("task_id", task_id))
     if action_task_id != task_id:
         raise ValidationError("action.task_id must match the task argument")
+    validation = value.get("validation")
+    if validation is None:
+        validation_public = None
+    elif not isinstance(validation, dict):
+        raise ValidationError("action.validation must be an object")
+    elif "environment_keys" in validation or "environment_value_sha256" in validation:
+        validation_public = ValidationSpec.public_from_mapping(validation, label="action.validation")
+    else:
+        validation_public = ValidationSpec.from_mapping(validation, label="action.validation").public()
     return ActionDescriptor(
         action_id=str(value.get("action_id", "")),
         task_id=action_task_id,
@@ -272,6 +288,7 @@ def _action_descriptor(payload: dict[str, Any], task_id: str, expected_revision:
         environment=str(value.get("environment", "local")),
         reservation_ids=tuple_field("reservation_ids"),
         resource_ids=tuple_field("resource_ids"),
+        validation=validation_public,
     )
 
 
@@ -487,9 +504,26 @@ def run(
             if not isinstance(command_value, list) or not command_value or any(not isinstance(item, str) or not item for item in command_value):
                 raise ValidationError(f"agent_commands.{phase} must be a nonempty string list")
             commands[phase] = tuple(command_value)
-        allowed_value = payload.get("allowed_processes", [])
-        if not isinstance(allowed_value, list) or not allowed_value or any(not isinstance(item, list) or not item or any(not isinstance(part, str) or not part for part in item) for item in allowed_value):
-            raise ValidationError("allowed_processes must be a nonempty list of string lists")
+        loaded_config = getattr(args, "_loaded_engine_config", None)
+        if loaded_config is not None and getattr(args, "_validation_from_config", False):
+            validation_policies = list(loaded_config.validation_policies)
+        else:
+            raw_validation = payload.get("validation")
+            if raw_validation is not None:
+                if not isinstance(raw_validation, dict) or set(raw_validation) != {"allowed_processes"}:
+                    raise ValidationError("validation must contain only allowed_processes")
+                raw_allowed = raw_validation["allowed_processes"]
+            else:
+                raw_allowed = payload.get("allowed_processes", [])
+            if not isinstance(raw_allowed, list) or not raw_allowed:
+                raise ValidationError("validation.allowed_processes must be a nonempty list")
+            validation_policies = [
+                ValidationCommandPolicy.from_value(item, label=f"validation.allowed_processes[{index}]")
+                for index, item in enumerate(raw_allowed)
+            ]
+        if not validation_policies:
+            raise ValidationError("validation.allowed_processes must be a nonempty list")
+        allowed_value = [list(policy.command) for policy in validation_policies]
         max_cycles = _engine_integer(payload, "max_cycles", default=3, minimum=1, maximum=100)
         min_cycles = _engine_integer(payload, "min_cycles", default=1, minimum=1, maximum=100)
         if min_cycles > max_cycles:
@@ -552,6 +586,7 @@ def run(
             runtime_root=home / "runtime",
             source_root=Path(__file__).resolve().parents[1],
             timeout_seconds=agent_timeout_seconds,
+            max_output_bytes=resource_policy.max_output_bytes,
         )
         review_mode = payload.get("review_mode", "single")
         if not isinstance(review_mode, str) or review_mode not in {"single", "cross"}:
@@ -584,6 +619,7 @@ def run(
                     runtime_root=home / "runtime",
                     source_root=Path(__file__).resolve().parents[1],
                     timeout_seconds=agent_timeout_seconds,
+                    max_output_bytes=resource_policy.max_output_bytes,
                 )
                 perspectives[reviewer_id] = perspective
             fallback = payload.get("review_fallback", "single")
@@ -596,6 +632,8 @@ def run(
                 max_parallel=_engine_integer(payload, "review_max_parallel", default=3, minimum=1, maximum=8),
                 fallback=fallback,
                 timeout_seconds=agent_timeout_seconds,
+                primary_reviewer_id=payload.get("review_primary_reviewer_id"),
+                secondary_policy=payload.get("review_secondary_policy", "parallel"),
             )
         raw_subskills = payload.get("subskills", {})
         subskill_runtime = None
@@ -613,10 +651,12 @@ def run(
             store,
             backend,
             actor=_actor(payload),
-            allowed_processes=tuple(tuple(item) for item in allowed_value),
+            allowed_processes=tuple(policy.command for policy in validation_policies),
+            validation_policies=tuple(validation_policies),
             min_cycles=min_cycles,
             max_cycles=max_cycles,
             max_steps=max_steps,
+            no_progress_limit=_engine_integer(payload, "no_progress_limit", default=2, minimum=2, maximum=3),
             lease_seconds=lease_seconds,
             subskill_runtime=subskill_runtime,
             require_external_subagents=subagents_required,
@@ -985,7 +1025,9 @@ def main(argv: list[str] | None = None) -> int:
                 ledger.complete(request_id, command or "taskctl", material, result)
         print(json.dumps(result,ensure_ascii=False,indent=2 if args.pretty else None,sort_keys=True)); return 0
     except NousError as exc:
-        error = {"contract_version":1,"ok":False,"command":command,"request_id":request_id,"error":{"code":exc.code,"message":str(exc),"retryable":False,"details":{},"exit_code":exc.exit_code}}
+        retryable = exc.retryable if isinstance(exc, ProviderFailureError) else False
+        details = dict(exc.details) if isinstance(exc, ProviderFailureError) else {}
+        error = {"contract_version":1,"ok":False,"command":command,"request_id":request_id,"error":{"code":exc.code,"message":str(exc),"retryable":retryable,"details":details,"exit_code":exc.exit_code}}
         if request_started and request_id is not None and ledger is not None and material is not None:
             ledger.complete(request_id, command or "taskctl", material, error)
         print(json.dumps(error,ensure_ascii=False),file=sys.stdout); return exc.exit_code

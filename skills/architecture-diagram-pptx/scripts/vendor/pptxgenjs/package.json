@@ -1,0 +1,21 @@
+{
+  "name": "pptxgenjs",
+  "version": "4.0.1",
+  "description": "PptxGenJS 4.0.1 with its unused image-size dependency removed for this generator.",
+  "license": "MIT",
+  "main": "dist/pptxgen.cjs.js",
+  "exports": {
+    ".": {
+      "require": "./dist/pptxgen.cjs.js"
+    }
+  },
+  "files": [
+    "dist/pptxgen.cjs.js",
+    "LICENSE",
+    "README.md"
+  ],
+  "dependencies": {
+    "https": "^1.0.0",
+    "jszip": "^3.10.1"
+  }
+}

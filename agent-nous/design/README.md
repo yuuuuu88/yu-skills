@@ -46,6 +46,10 @@
   - SkillとAgent workflowのeval manifest、隔離fixture、判定、退行検出を定義。
 - [Distribution and Repository Hygiene](./distribution.md)
   - 配布対象、ローカル設定、Task/Request runtime、リリース前チェックを定義。
+- [Validation Sandbox Design](./validation-sandbox.md)
+  - disposable validation workspace、side effect、allowlist、postflight evidenceを定義。
+- [Provider Error and Retry Design](./provider-errors.md)
+  - provider error category、redaction、retry、Review classification、no-progress停止を定義。
 
 ## 現行の追加設計
 

@@ -12,16 +12,26 @@
     },
     "validation": {
       "allowed_processes": [
-        [
-          "/usr/bin/python3",
-          "-m",
-          "pytest"
-        ]
+        {
+          "command": ["/usr/bin/python3", "-m", "pytest"],
+          "cwd": ".",
+          "timeout_seconds": 120,
+          "allowed_side_effects": [
+            ".pytest_cache",
+            ".pytest_cache/**",
+            "**/__pycache__",
+            "**/__pycache__/**",
+            "**/*.pyc",
+            "validation.log"
+          ],
+          "max_output_bytes": 4194304
+        }
       ]
     },
     "min_cycles": 1,
     "max_cycles": 10,
     "max_steps": 30,
+    "no_progress_limit": 2,
     "lease_seconds": 600,
     "agent_timeout_seconds": 300,
     "resources": {

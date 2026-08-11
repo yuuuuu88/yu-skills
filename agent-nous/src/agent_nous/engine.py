@@ -14,6 +14,7 @@ been executed and observed by the parent process.
 import hashlib
 import json
 import copy
+import re
 import queue
 import shutil
 import threading
@@ -26,10 +27,16 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Literal, Mapping, Protocol
 
+from .diagnostics import (
+    REVIEW_CLASSIFICATIONS,
+    ProviderDiagnostic,
+    make_provider_diagnostic,
+)
 from .domain import ActionDescriptor, PolicyGateway, secret_summary
-from .errors import ConflictError, RecoveryRequiredError, UnsupportedActionError, ValidationError
+from .errors import ConflictError, ProviderFailureError, RecoveryRequiredError, UnsupportedActionError, ValidationError
 from .executor.managed import ExecutionResult, ManagedExecutor
 from .executor.sandbox import CodexSandbox
+from .executor.validation import ValidationCommandPolicy, ValidationSpec
 from .io import digest_json, read_json
 from .observability import TraceExporter, export_execution_event
 from .resources import ResourceBudget
@@ -47,6 +54,14 @@ def _safe_id(value: str, label: str) -> str:
     if not isinstance(value, str) or not value.strip() or any(char in value for char in "/\\\x00\r\n"):
         raise ValidationError(f"{label} must be a safe nonempty identifier")
     return value
+
+
+def _artifact_decision(path: Path, decision: str) -> bool:
+    try:
+        value = read_json(path)
+    except Exception:
+        return False
+    return isinstance(value, Mapping) and value.get("decision") == decision
 
 
 def _trace_id_for_task(task_id: str) -> str:
@@ -83,6 +98,9 @@ class AgentContext:
     trace_id: str | None = None
     span_id: str | None = None
     parent_span_id: str | None = None
+    # Populated only on the one bounded provider retry.  It contains the
+    # previous redacted diagnosis, never raw provider output.
+    retry_context: dict[str, Any] | None = None
 
     def payload(self) -> dict[str, Any]:
         """Return the only context an external agent is allowed to receive."""
@@ -106,6 +124,7 @@ class AgentContext:
                 "parent_span_id": self.parent_span_id,
                 "format": "w3c-trace-context-compatible",
             },
+            "retry_context": self.retry_context,
             "nous_loop": {
                 "name": "Nous Loop",
                 "sequence": "Plan -> Implement -> Review -> Plan ...",
@@ -155,7 +174,7 @@ def _normalize_findings(value: Any, reviewer_id: str) -> tuple[list[dict[str, An
     if value is None:
         return [], []
     if not isinstance(value, list):
-        return [], [f"reviewer {reviewer_id} findings must be a list"]
+        return [], [f"reviewer {reviewer_id} findings at $.findings must be a list"]
     findings: list[dict[str, Any]] = []
     errors: list[str] = []
     for index, raw in enumerate(value):
@@ -164,19 +183,37 @@ def _normalize_findings(value: Any, reviewer_id: str) -> tuple[list[dict[str, An
             continue
         finding = dict(raw)
         required = ("finding_id", "severity", "disposition", "summary")
-        if any(not isinstance(finding.get(key), str) or not str(finding[key]).strip() for key in required):
-            errors.append(f"reviewer {reviewer_id} finding {index} has invalid required fields")
+        missing = [key for key in required if not isinstance(finding.get(key), str) or not str(finding[key]).strip()]
+        if missing:
+            errors.append(f"reviewer {reviewer_id} finding {index} has invalid required field(s) at $.findings[{index}]: {', '.join(missing)}")
             continue
         if finding["severity"] not in _REVIEW_SEVERITIES or finding["disposition"] not in _REVIEW_DISPOSITIONS:
-            errors.append(f"reviewer {reviewer_id} finding {index} has invalid severity or disposition")
+            errors.append(f"reviewer {reviewer_id} finding {index} has invalid severity or disposition at $.findings[{index}]")
             continue
+        category = finding.get("category", "code_gap")
+        if not isinstance(category, str) or category not in REVIEW_CLASSIFICATIONS - {"completed", "human_required"}:
+            errors.append(f"reviewer {reviewer_id} finding {index} has invalid category at findings[{index}].category")
+            continue
+        finding["category"] = category
         for key in ("evidence_refs", "next_plan_input"):
             if key in finding and (not isinstance(finding[key], list) or any(not isinstance(item, str) for item in finding[key])):
-                errors.append(f"reviewer {reviewer_id} finding {index} has invalid {key}")
+                errors.append(f"reviewer {reviewer_id} finding {index} has invalid {key} at $.findings[{index}].{key}")
                 break
         else:
             findings.append(finding)
     return findings, errors
+
+
+def _finding_schema_errors(errors: list[str]) -> list[dict[str, str]]:
+    """Turn human-readable validation messages into bounded typed evidence."""
+    records: list[dict[str, str]] = []
+    for message in errors[:32]:
+        match = re.search(r"\$\.findings\[(\d+)\](?:\.([A-Za-z_][A-Za-z0-9_]*))?", message)
+        path = f"$.findings[{match.group(1)}]" if match else "$.findings"
+        if match and match.group(2):
+            path += f".{match.group(2)}"
+        records.append({"path": path, "message": message})
+    return records
 
 
 def _finding_is_blocking(finding: Mapping[str, Any]) -> bool:
@@ -185,6 +222,100 @@ def _finding_is_blocking(finding: Mapping[str, Any]) -> bool:
     # malformed producer cannot accidentally turn a concrete release issue
     # into an advisory merely by omitting disposition.
     return finding.get("disposition") == "blocking" or finding.get("severity") in {"blocker", "major"}
+
+
+def _plan_granularity(context: AgentContext, values: Mapping[str, Any]) -> dict[str, Any]:
+    """Assess plan size without imposing a fixed file-count ceiling.
+
+    The result is advisory input for the next Plan/Review handoff.  Related
+    files may remain one atomic change set; only a combination of large
+    output, many dependencies, and many acceptance conditions recommends a
+    split.  The engine never silently executes a split that the Plan did not
+    describe.
+    """
+    file_values: list[str] = []
+    for key in ("planned_files", "affected_files", "files", "targets"):
+        raw = values.get(key)
+        if isinstance(raw, list):
+            file_values.extend(item for item in raw if isinstance(item, str) and item.strip())
+    unique_files = list(dict.fromkeys(file_values))
+    raw_change_sets = values.get("change_sets", values.get("atomic_change_sets", []))
+    change_sets: list[dict[str, Any]] = []
+    change_set_errors: list[str] = []
+    if raw_change_sets is not None:
+        if not isinstance(raw_change_sets, list):
+            change_set_errors.append("change_sets must be an array")
+        else:
+            for index, raw in enumerate(raw_change_sets):
+                if not isinstance(raw, Mapping):
+                    change_set_errors.append(f"change_sets[{index}] must be an object")
+                    continue
+                item = dict(raw)
+                files = item.get("files", item.get("targets", []))
+                done = item.get("definition_of_done", item.get("done", []))
+                depends_on = item.get("depends_on", [])
+                if not isinstance(files, list) or any(not isinstance(path, str) or not path.strip() for path in files):
+                    change_set_errors.append(f"change_sets[{index}].files must be a list of nonempty strings")
+                    continue
+                if not isinstance(done, list) or any(not isinstance(note, str) or not note.strip() for note in done):
+                    change_set_errors.append(f"change_sets[{index}].definition_of_done must be a list of nonempty strings")
+                    continue
+                if not isinstance(depends_on, list) or any(not isinstance(ref, str) or not ref.strip() for ref in depends_on):
+                    change_set_errors.append(f"change_sets[{index}].depends_on must be a list of nonempty strings")
+                    continue
+                change_sets.append({
+                    "id": item.get("id", f"change-set-{index + 1}"),
+                    "files": list(dict.fromkeys(files)),
+                    "depends_on": list(dict.fromkeys(depends_on)),
+                    "definition_of_done": list(done),
+                })
+    estimated_bytes = values.get("estimated_output_bytes", values.get("estimated_change_bytes", 0))
+    if not isinstance(estimated_bytes, int) or isinstance(estimated_bytes, bool) or estimated_bytes < 0:
+        estimated_bytes = sum(len(str(values.get(key, "")).encode("utf-8", errors="replace")) for key in ("plan", "planned_content", "acceptance_notes"))
+    dependency_values = values.get("dependencies", values.get("dependency_graph", []))
+    if isinstance(dependency_values, Mapping):
+        dependency_count = len(dependency_values) + sum(len(item) for item in dependency_values.values() if isinstance(item, list))
+    elif isinstance(dependency_values, list):
+        dependency_count = len(dependency_values)
+    else:
+        dependency_count = 0
+    acceptance_count = len(context.definition.get("acceptance_criteria", [])) if isinstance(context.definition.get("acceptance_criteria"), list) else 0
+    complexity_score = round(
+        len(unique_files) + estimated_bytes / 20_000 + dependency_count / 3 + acceptance_count / 2,
+        2,
+    )
+    repeated_files: list[str] = []
+    # Prior plan artifacts are read by the parent engine in normal operation;
+    # this local signal is populated later by ``_plan_granularity_history``.
+    prior_files = values.get("prior_planned_files", [])
+    if isinstance(prior_files, list):
+        repeated_files = sorted(set(unique_files) & {item for item in prior_files if isinstance(item, str)})
+    split_reasons: list[str] = []
+    if len(unique_files) >= 9:
+        split_reasons.append("many_files")
+    if estimated_bytes > 120_000:
+        split_reasons.append("large_estimated_output")
+    if dependency_count >= 16:
+        split_reasons.append("many_dependencies")
+    if complexity_score >= 16:
+        split_reasons.append("high_composite_complexity")
+    return {
+        "model": "complexity_based_no_fixed_file_limit",
+        "file_count": len(unique_files),
+        "files": unique_files,
+        "estimated_output_bytes": estimated_bytes,
+        "dependency_count": dependency_count,
+        "acceptance_criteria_count": acceptance_count,
+        "complexity_score": complexity_score,
+        "atomic_change_sets": change_sets,
+        "change_set_errors": change_set_errors,
+        "repeated_files": repeated_files,
+        "same_file_rewrite_risk": bool(repeated_files),
+        "requires_split": bool(split_reasons),
+        "split_reasons": split_reasons,
+        "definition_of_done_required": bool(split_reasons),
+        "recommendation": "split_with_dependency_dag" if split_reasons else "keep_related_changes_atomic",
+    }
 
 
 def _review_input_digest(context: AgentContext) -> str:
@@ -209,6 +340,38 @@ def _review_input_digest(context: AgentContext) -> str:
             if context.subskill_selection else None
         ),
     })
+
+
+def _provider_error(
+    category: str,
+    *,
+    phase: Phase | None = None,
+    cycle: int | None = None,
+    provider: str | None = None,
+    action_id: str | None = None,
+    error_path: str = "$",
+    expected: str | None = None,
+    actual: Any = None,
+    stderr: str | None = None,
+    retryable: bool = False,
+    message: str = "provider output is invalid",
+    details: Mapping[str, Any] | None = None,
+) -> ProviderFailureError:
+    diagnostic = make_provider_diagnostic(
+        category,
+        phase=phase,
+        cycle=cycle,
+        provider=provider,
+        action_id=action_id,
+        error_path=error_path,
+        expected=expected,
+        actual=actual,
+        stderr=stderr,
+        retryable=retryable,
+        message=message,
+        details=details,
+    )
+    return ProviderFailureError(diagnostic)
 
 
 class CallableAgentBackend:
@@ -260,12 +423,16 @@ class JsonCommandAgentBackend:
         runtime_root: Path,
         source_root: Path | None = None,
         timeout_seconds: float = 180,
+        max_output_bytes: int = 4 * 1024 * 1024,
     ) -> None:
         self.external_subagent = True
         self.commands = {phase: tuple(command) for phase, command in commands.items()}
         self.runtime_root = runtime_root.resolve()
         self.source_root = (source_root or Path(__file__).resolve().parents[1]).resolve()
         self.timeout_seconds = timeout_seconds
+        if not isinstance(max_output_bytes, int) or not 1_024 <= max_output_bytes <= 16 * 1024 * 1024:
+            raise ValidationError("agent max output must be between 1024 and 16777216 bytes")
+        self.max_output_bytes = max_output_bytes
         if timeout_seconds <= 0:
             raise ValidationError("agent timeout must be positive")
         if not self.source_root.is_dir():
@@ -321,15 +488,79 @@ class JsonCommandAgentBackend:
             # not trusted as Task evidence and is removed after the process.
             shutil.rmtree(scratch, ignore_errors=True)
         if secret_summary({"stdout": result.stdout, "stderr": result.stderr}):
-            raise ValidationError(f"{phase} agent emitted secret-like output")
+            raise _provider_error(
+                "invalid_schema",
+                phase=phase,
+                provider="json-command",
+                stderr=result.stderr,
+                retryable=False,
+                message=f"{phase} agent emitted secret-like output",
+            )
+        output_bytes = len(result.stdout.encode("utf-8", errors="replace")) + len(result.stderr.encode("utf-8", errors="replace"))
+        if output_bytes > self.max_output_bytes:
+            raise _provider_error(
+                "output_too_large",
+                phase=phase,
+                provider="json-command",
+                stderr=result.stderr,
+                expected=f"output <= {self.max_output_bytes} bytes",
+                actual=output_bytes,
+                retryable=False,
+                message=f"{phase} agent output exceeded the configured bound",
+            )
+        if result.returncode == 124 or "executor timeout" in result.stderr.lower():
+            raise _provider_error(
+                "timeout",
+                phase=phase,
+                provider="json-command",
+                stderr=result.stderr,
+                expected=f"complete within {self.timeout_seconds:g}s",
+                actual=result.returncode,
+                retryable=True,
+                message=f"{phase} agent timed out",
+            )
         if result.returncode != 0:
             stderr_digest = hashlib.sha256(result.stderr.encode("utf-8")).hexdigest()
-            raise ValidationError(f"{phase} agent exited with returncode={result.returncode}; stderr_sha256={stderr_digest}")
+            raise _provider_error(
+                "provider_process_failure",
+                phase=phase,
+                provider="json-command",
+                stderr=result.stderr,
+                expected="process returncode 0",
+                actual=result.returncode,
+                retryable=result.returncode in {75, 126, 127},
+                message=f"{phase} agent exited with returncode={result.returncode}; stderr_sha256={stderr_digest}",
+            )
         try:
             value = json.loads(result.stdout)
         except json.JSONDecodeError as exc:
-            raise ValidationError(f"{phase} agent must emit one JSON object") from exc
-        output = _coerce_agent_output(value, allow_reject=phase == "review")
+            raise _provider_error(
+                "invalid_json",
+                phase=phase,
+                provider="json-command",
+                error_path="$",
+                expected="one JSON object",
+                actual=result.stdout,
+                stderr=result.stderr,
+                retryable=True,
+                message=f"{phase} agent must emit one JSON object",
+                details={"json_error": str(exc)},
+            ) from exc
+        try:
+            output = _coerce_agent_output(value, allow_reject=phase == "review")
+        except ProviderFailureError as exc:
+            raise exc
+        except ValidationError as exc:
+            raise _provider_error(
+                "invalid_envelope",
+                phase=phase,
+                provider="json-command",
+                expected="summary, outputs, optional decision and metadata",
+                actual=value,
+                stderr=result.stderr,
+                retryable=False,
+                message=str(exc),
+            ) from exc
         metadata = {
             **output.metadata,
             "provider": "json-command",
@@ -367,6 +598,8 @@ class CrossReviewBackend:
         max_parallel: int = 3,
         fallback: str = "single",
         timeout_seconds: float = 180,
+        primary_reviewer_id: str | None = None,
+        secondary_policy: str = "parallel",
     ) -> None:
         if len(reviewers) < 2:
             raise ValidationError("cross-review requires at least two reviewers")
@@ -378,12 +611,18 @@ class CrossReviewBackend:
             raise ValidationError("cross-review fallback must be single, human, or none")
         if timeout_seconds <= 0:
             raise ValidationError("cross-review timeout must be positive")
+        if not isinstance(secondary_policy, str) or secondary_policy not in {"parallel", "after_primary_success"}:
+            raise ValidationError("cross-review secondary_policy must be parallel or after_primary_success")
         self.base = base
         self.reviewers = tuple(reviewers.items())
         self.perspectives = dict(perspectives or {})
         self.max_parallel = min(max_parallel, len(self.reviewers))
         self.fallback = fallback
         self.timeout_seconds = timeout_seconds
+        self.primary_reviewer_id = primary_reviewer_id or self.reviewers[0][0]
+        if not isinstance(self.primary_reviewer_id, str) or self.primary_reviewer_id not in dict(self.reviewers):
+            raise ValidationError("cross-review primary reviewer is not registered")
+        self.secondary_policy = secondary_policy
         self.external_subagent = bool(
             getattr(base, "external_subagent", False)
             and all(getattr(backend, "external_subagent", False) for _, backend in self.reviewers)
@@ -431,6 +670,8 @@ class CrossReviewBackend:
             )
             try:
                 return reviewer_id, backend.launch("review", reviewer_context), None
+            except ProviderFailureError as exc:
+                return reviewer_id, None, exc.category
             except Exception as exc:  # provider failure becomes a bounded finding
                 return reviewer_id, None, type(exc).__name__
 
@@ -456,6 +697,33 @@ class CrossReviewBackend:
                 active[item[0]] = thread
                 thread.start()
 
+        if self.secondary_policy == "after_primary_success":
+            primary_item = next(item for item in self.reviewers if item[0] == self.primary_reviewer_id)
+            primary_queue: queue.Queue[tuple[str, AgentOutput | None, str | None]] = queue.Queue()
+            primary_thread = threading.Thread(
+                target=lambda: primary_queue.put(run_one(primary_item)),
+                name=f"nous-review-primary-{self.primary_reviewer_id}",
+                daemon=True,
+            )
+            primary_thread.start()
+            try:
+                primary_result = primary_queue.get(timeout=self.timeout_seconds)
+            except queue.Empty:
+                primary_result = (self.primary_reviewer_id, None, "TimeoutError")
+            results_by_id[primary_result[0]] = primary_result
+            if observer is not None:
+                observer(*primary_result)
+            if primary_result[2] is not None:
+                for reviewer_id, _backend in self.reviewers:
+                    if reviewer_id == self.primary_reviewer_id:
+                        continue
+                    skipped = (reviewer_id, None, f"skipped_after_primary_failure:{primary_result[2]}")
+                    results_by_id[reviewer_id] = skipped
+                    if observer is not None:
+                        observer(*skipped)
+                results = [results_by_id[reviewer_id] for reviewer_id, _ in self.reviewers]
+                return self._merge_review_results(context, results)
+            pending_items = [item for item in self.reviewers if item[0] != self.primary_reviewer_id]
         start_next()
         deadline = time.monotonic() + self.timeout_seconds
         while active:
@@ -491,12 +759,20 @@ class CrossReviewBackend:
                 results_by_id[reviewer_id] = run_one((reviewer_id, dict(self.reviewers)[reviewer_id]))
         results = [results_by_id[reviewer_id] for reviewer_id, _ in self.reviewers]
 
+        return self._merge_review_results(context, results)
+
+    def _merge_review_results(
+        self,
+        context: AgentContext,
+        results: list[tuple[str, AgentOutput | None, str | None]],
+    ) -> AgentOutput:
         proposals: dict[str, dict[str, Any]] = {}
         proposal_fingerprints: dict[str, str] = {}
         semantic_proposals: dict[str, str] = {}
         conflicts: list[str] = []
         blocking: list[str] = []
         findings: list[dict[str, Any]] = []
+        finding_schema_errors: list[dict[str, str]] = []
         records: list[dict[str, Any]] = []
         questions: list[Mapping[str, Any]] = []
         decisions: list[str] = []
@@ -520,6 +796,7 @@ class CrossReviewBackend:
             findings.extend(reviewer_findings)
             if finding_errors:
                 blocking.extend(finding_errors)
+                finding_schema_errors.extend(_finding_schema_errors(finding_errors))
                 decision = "needs_plan"
             for finding in reviewer_findings:
                 if _finding_is_blocking(finding):
@@ -672,6 +949,7 @@ class CrossReviewBackend:
                 "conflicts": conflicts,
             },
             "findings": findings,
+            "finding_schema_errors": finding_schema_errors,
             "review_provenance": {
                 "review_pass_id": f"review-pass-{uuid.uuid4().hex}",
                 "review_depth": 0,
@@ -699,24 +977,50 @@ def _coerce_agent_output(value: AgentOutput | Mapping[str, Any], *, allow_reject
     if isinstance(value, AgentOutput):
         result = value
     elif isinstance(value, Mapping):
+        unknown = sorted(set(value) - {"summary", "outputs", "decision", "metadata"})
+        if unknown:
+            raise _provider_error(
+                "invalid_envelope",
+                error_path="$",
+                expected="only summary, outputs, decision, and metadata",
+                actual=value,
+                message=f"agent output has unknown top-level fields: {', '.join(str(item) for item in unknown)}",
+            )
         summary = value.get("summary")
         outputs = value.get("outputs", {})
         decision = value.get("decision")
         metadata = value.get("metadata", {})
-        if not isinstance(summary, str) or not summary.strip() or not isinstance(outputs, Mapping) or not isinstance(metadata, Mapping):
-            raise ValidationError("agent output requires summary, object outputs, and object metadata")
+        if "summary" not in value:
+            raise _provider_error("missing_required_field", error_path="$.summary", expected="nonempty string", actual=None, message="agent output requires summary")
+        if "outputs" not in value:
+            raise _provider_error("missing_required_field", error_path="$.outputs", expected="object", actual=None, message="agent output requires outputs")
+        if not isinstance(summary, str) or not summary.strip():
+            raise _provider_error("invalid_schema", error_path="$.summary", expected="nonempty string", actual=summary, message="agent output summary must be a nonempty string")
+        if not isinstance(outputs, Mapping):
+            raise _provider_error("invalid_schema", error_path="$.outputs", expected="object", actual=outputs, message="agent output outputs must be an object")
+        if not isinstance(metadata, Mapping):
+            raise _provider_error("invalid_schema", error_path="$.metadata", expected="object", actual=metadata, message="agent output metadata must be an object")
         allowed_decisions = {"completed", "needs_plan", "needs_human_input"}
         if allow_reject:
             allowed_decisions.add("reject")
         if decision is not None and decision not in allowed_decisions:
-            raise ValidationError("agent output decision is invalid")
+            raise _provider_error("invalid_schema", error_path="$.decision", expected="completed, needs_plan, needs_human_input, or null", actual=decision, message="agent output decision is invalid")
         result = AgentOutput(summary, dict(outputs), decision, dict(metadata))
     else:
-        raise ValidationError("agent output must be an object")
-    if not result.summary.strip():
-        raise ValidationError("agent output summary must be nonempty")
+        raise _provider_error("invalid_envelope", error_path="$", expected="object", actual=value, message="agent output must be an object")
+    if not isinstance(result.summary, str) or not result.summary.strip():
+        raise _provider_error("missing_required_field", error_path="$.summary", expected="nonempty string", actual=result.summary, message="agent output summary must be nonempty")
+    if not isinstance(result.outputs, Mapping):
+        raise _provider_error("invalid_schema", error_path="$.outputs", expected="object", actual=result.outputs, message="agent output outputs must be an object")
+    if not isinstance(result.metadata, Mapping):
+        raise _provider_error("invalid_schema", error_path="$.metadata", expected="object", actual=result.metadata, message="agent output metadata must be an object")
+    allowed_decisions = {"completed", "needs_plan", "needs_human_input"}
+    if allow_reject:
+        allowed_decisions.add("reject")
+    if result.decision is not None and result.decision not in allowed_decisions:
+        raise _provider_error("invalid_schema", error_path="$.decision", expected="known decision or null", actual=result.decision, message="agent output decision is invalid")
     if secret_summary({"summary": result.summary, "outputs": result.outputs, "metadata": result.metadata}):
-        raise ValidationError("agent output contains a high-confidence secret")
+        raise _provider_error("invalid_schema", error_path="$", expected="secret-free provider output", actual=result.outputs, message="agent output contains a high-confidence secret")
     return result
 
 
@@ -726,6 +1030,8 @@ class _ProposalResult:
     returncode: int
     evidence_ref: str | None
     target: str | None
+    failure_category: str | None = None
+    duration_ms: float | None = None
 
 
 class AutonomousEngine:
@@ -740,10 +1046,13 @@ class AutonomousEngine:
         gateway: PolicyGateway | None = None,
         executor: ManagedExecutor | None = None,
         allowed_processes: tuple[tuple[str, ...], ...] = (),
+        validation_policies: tuple[ValidationCommandPolicy, ...] = (),
         min_cycles: int = 1,
         max_cycles: int = 3,
         max_steps: int = 12,
         lease_seconds: int = 300,
+        provider_retry_limit: int = 1,
+        no_progress_limit: int = 2,
         subskill_runtime: SubskillRuntime | None = None,
         require_external_subagents: bool = True,
         trace_exporter: TraceExporter | None = None,
@@ -760,6 +1069,13 @@ class AutonomousEngine:
             or min_cycles > max_cycles
             or max_steps < 1
             or (min_cycles > 1 and max_steps < min_cycles * 3)
+            or not isinstance(provider_retry_limit, int)
+            or isinstance(provider_retry_limit, bool)
+            or provider_retry_limit != 1
+            or not isinstance(no_progress_limit, int)
+            or isinstance(no_progress_limit, bool)
+            or no_progress_limit < 2
+            or no_progress_limit > 3
         ):
             raise ValidationError("invalid autonomous engine configuration")
         if lease_seconds < 30:
@@ -776,26 +1092,56 @@ class AutonomousEngine:
         self.max_cycles = max_cycles
         self.max_steps = max_steps
         self.lease_seconds = lease_seconds
+        self.provider_retry_limit = provider_retry_limit
+        self.no_progress_limit = no_progress_limit
         self.subskill_runtime = subskill_runtime
         self.require_external_subagents = require_external_subagents
         self.trace_exporter = trace_exporter
         self.resource_budget = resource_budget
         self._execution_trace: list[dict[str, Any]] = []
         self._phase_quality: list[dict[str, Any]] = []
-        self.gateway = gateway or PolicyGateway(allowed_processes=allowed_processes)
+        self.validation_policies = tuple(validation_policies) or tuple(
+            ValidationCommandPolicy(command) for command in allowed_processes
+        )
+        self.gateway = gateway or PolicyGateway(allowed_processes=tuple(policy.command for policy in self.validation_policies))
         self.executor = executor or ManagedExecutor(store, self.gateway, store.home / "runtime", actor=actor)
         # Child Review phases may observe their two reviewers concurrently.
         # Serialize the read-revision/write-observation pair so independent
         # workers do not fence one another with a stale root revision.
         self._review_observation_lock = threading.Lock()
+        self._task_started_at: str | None = None
+        self._task_started_monotonic: float | None = None
+        self._cycle_started: dict[int, float] = {}
+        self._provider_retry_count = 0
+        self._validation_count = 0
+        self._validation_environment_failures = 0
+        self._code_failures = 0
+        self._no_progress_count = 0
+        self._last_progress_signature: str | None = None
+        self._last_actual_change_at: str | None = None
+        self._current_bottleneck: str | None = None
+        self._active_task_id: str | None = None
 
     def run(self, task_id: str, *, _reset_diagnostics: bool = True) -> dict[str, Any]:
         """Continue one task from canonical state, never from chat history."""
+        self._active_task_id = task_id
         if _reset_diagnostics:
             self._execution_trace = []
             self._phase_quality = []
+            self._task_started_at = _now()
+            self._task_started_monotonic = time.monotonic()
+            self._cycle_started = {}
+            self._provider_retry_count = 0
+            self._validation_count = 0
+            self._validation_environment_failures = 0
+            self._code_failures = 0
+            self._no_progress_count = 0
+            self._last_progress_signature = None
+            self._last_actual_change_at = None
+            self._current_bottleneck = None
         self.store.init()
         self._recover_for_resume(task_id)
+        self._seed_progress_from_durable_artifacts(task_id)
         # A process may disappear after the root Plan committed its child
         # graph.  Resume from the durable graph, not from the root phase
         # cursor (which is intentionally still the ordinary Implement phase).
@@ -836,6 +1182,7 @@ class AutonomousEngine:
                 self._recover_for_resume(task_id)
                 continue
             phase: Phase = state["phase"]
+            self._cycle_started.setdefault(int(state["cycle"]), time.monotonic())
             lease = self.store.acquire_lease(task_id, state["revision"], self.actor, seconds=self.lease_seconds)
             lease_info = lease["active_lease"]
             assert isinstance(lease_info, dict)
@@ -843,7 +1190,7 @@ class AutonomousEngine:
                 context = self._context(definition, lease, stable_context, phase)
                 context = self._prepare_subskill_context(context, str(lease_info["token"]))
                 try:
-                    output = self._launch_phase(context, str(lease_info["token"]))
+                    output = self._launch_phase_with_retry(context, str(lease_info["token"]))
                 except Exception as exc:
                     if phase == "plan" or isinstance(exc, (RecoveryRequiredError, ConflictError)):
                         raise
@@ -852,12 +1199,29 @@ class AutonomousEngine:
                     # succeeded and do not leave the lease live forever.
                     output = AgentOutput(
                         f"{phase} agent failed; re-plan is required",
-                        {"agent_failure": type(exc).__name__, "blocking_issues": [f"{phase} agent failure ({type(exc).__name__})"]},
+                        {"agent_failure": type(exc).__name__, "blocking_issues": [f"{phase} agent failure ({type(exc).__name__})"], "provider_diagnostic": self._diagnostic_public(exc)},
                         "needs_plan" if phase == "review" else None,
-                        {"provider_failure": type(exc).__name__},
+                        {"provider_failure": type(exc).__name__, "provider_diagnostic": self._diagnostic_public(exc)},
                     )
                 current_revision = self.store.read_task(task_id)[1]["revision"]
-                normalized, decision = self._materialize_output(context, output, current_revision, str(lease_info["token"]))
+                try:
+                    normalized, decision = self._materialize_output(context, output, current_revision, str(lease_info["token"]))
+                except ProviderFailureError as exc:
+                    diagnostic = exc.diagnostic.with_context(phase=phase, cycle=context.cycle, provider=exc.diagnostic.provider or "provider")
+                    self._record_provider_diagnostic(diagnostic, task_id=context.task_id)
+                    if phase == "plan":
+                        raise
+                    fallback_output = AgentOutput(
+                        f"{phase} provider output was invalid; re-plan is required",
+                        {
+                            "agent_failure": type(exc).__name__,
+                            "provider_diagnostic": diagnostic.public(),
+                            "blocking_issues": [f"{phase} provider output invalid ({diagnostic.category})"],
+                        },
+                        "needs_plan" if phase == "review" else None,
+                        {"provider_failure": diagnostic.category, "provider_diagnostic": diagnostic.public()},
+                    )
+                    normalized, decision = self._materialize_output(context, fallback_output, current_revision, str(lease_info["token"]))
                 if phase == "review" and decision == "completed" and self._implement_has_failures(context):
                     decision = "needs_plan"
                     normalized.setdefault("blocking_issues", []).append("previous implement phase contains unresolved managed failures")
@@ -891,6 +1255,9 @@ class AutonomousEngine:
                 raise
             steps += 1
             state = recorded["state"]
+            if phase == "review" and decision == "needs_plan":
+                if self._should_stop_for_no_progress(task_id, normalized, state):
+                    return self._result(task_id, self.store.read_task(task_id)[1], steps, "human_required")
             if phase == "plan" and output.outputs.get("parallelization_plan") is not None:
                 # The root Plan is the only phase allowed to materialize a
                 # child graph.  The graph is created only after the Plan
@@ -1002,11 +1369,166 @@ class AutonomousEngine:
         if state["execution_status"] in {"paused", "interrupted"}:
             self.store.resume_prepare(task_id, state["revision"], self.actor)
 
+    def _seed_progress_from_durable_artifacts(self, task_id: str) -> None:
+        """Restore the trailing no-progress streak after a fresh process."""
+        self._no_progress_count = 0
+        self._last_progress_signature = None
+        task_root = self.store._path(task_id)
+        reviews: list[dict[str, Any]] = []
+        for path in sorted(task_root.glob("cycles/*/03-review-result.json")):
+            try:
+                value = read_json(path)
+            except Exception:
+                continue
+            outputs = value.get("outputs") if isinstance(value, Mapping) else None
+            progress = outputs.get("progress") if isinstance(outputs, Mapping) else None
+            if isinstance(progress, Mapping):
+                reviews.append(dict(progress))
+        for progress in reversed(reviews):
+            signature = progress.get("failure_signature")
+            if not isinstance(signature, str) or progress.get("has_effects") is True:
+                break
+            if self._last_progress_signature is None:
+                self._last_progress_signature = signature
+            if signature != self._last_progress_signature:
+                break
+            self._no_progress_count += 1
+
+    def _prior_planned_files(self, task_id: str) -> list[str]:
+        """Collect prior plan targets for same-file rewrite diagnostics."""
+        files: list[str] = []
+        task_root = self.store._path(task_id)
+        for path in sorted(task_root.glob("cycles/*/01-plan-result.json")):
+            try:
+                artifact = read_json(path)
+            except Exception:
+                continue
+            outputs = artifact.get("outputs") if isinstance(artifact, Mapping) else None
+            if not isinstance(outputs, Mapping):
+                continue
+            for key in ("planned_files", "affected_files", "files", "targets"):
+                raw = outputs.get(key)
+                if isinstance(raw, list):
+                    files.extend(item for item in raw if isinstance(item, str) and item.strip())
+            granularity = outputs.get("plan_granularity")
+            if isinstance(granularity, Mapping) and isinstance(granularity.get("files"), list):
+                files.extend(item for item in granularity["files"] if isinstance(item, str) and item.strip())
+        return list(dict.fromkeys(files))
+
+    @staticmethod
+    def _normalise_progress_text(value: Any) -> str:
+        if not isinstance(value, str):
+            return str(value)
+        # Cycle/action IDs are execution identity, not failure identity.
+        normalized = re.sub(r"(?:[-_]c|cycle[-_]|[-_])\d+\b", "", value, flags=re.IGNORECASE)
+        return re.sub(r"\b[a-f0-9]{16,}\b", "<id>", normalized, flags=re.IGNORECASE)
+
+    def _should_stop_for_no_progress(self, task_id: str, outputs: Mapping[str, Any], state: Mapping[str, Any]) -> bool:
+        progress = outputs.get("progress")
+        if not isinstance(progress, Mapping):
+            return False
+        signature = progress.get("failure_signature")
+        if not isinstance(signature, str):
+            return False
+        has_effects = bool(progress.get("has_effects"))
+        if has_effects or signature != self._last_progress_signature:
+            self._last_progress_signature = signature
+            self._no_progress_count = 0
+            return False
+        self._no_progress_count += 1
+        self._current_bottleneck = str(progress.get("classification") or "provider_gap")
+        if self._no_progress_count < self.no_progress_limit:
+            return False
+        latest = self.store.read_task(task_id)[1]
+        if latest.get("lifecycle_status") != "active" or latest.get("execution_status") != "idle":
+            return False
+        question = {
+            "question": "同じ失敗が続き、これ以上の自動再計画では進展しないため確認が必要です。",
+            "why_now": f"同一の失敗分類 ({self._current_bottleneck}) が {self._no_progress_count} 回続き、変更または検証可能な進展を確認できませんでした。",
+            "options": [
+                {"option_id": "replan", "label": "前提を見直して再計画", "impact": "失敗原因を踏まえた新しいPlanを作成します。"},
+                {"option_id": "stop", "label": "停止", "impact": "現在の成果物と診断を確認して手動対応します。"},
+            ],
+            "recommended_option_id": "stop",
+            "free_text_allowed": False,
+            "blocking_scope": "root_task",
+            "blocked_refs": [],
+            "affected_loop_ids": ["root"],
+            "resume_target": {"resume_phase": "plan", "resume_transition": "answer_received", "blocked_action_ref": None, "blocked_artifact_ref": None},
+            "approval_request_ref": None,
+        }
+        self.store.record_question(task_id, int(latest["revision"]), self.actor, question)
+        return True
+
     def _record_trace_event(self, event: Mapping[str, Any]) -> None:
         """Keep the durable in-memory trace and optional export in lockstep."""
         value = dict(event)
         self._execution_trace.append(value)
         export_execution_event(self.trace_exporter, value)
+
+    @staticmethod
+    def _diagnostic_public(exc: Exception) -> dict[str, Any] | None:
+        if isinstance(exc, ProviderFailureError):
+            return exc.diagnostic.public()
+        return None
+
+    def _record_provider_diagnostic(self, diagnostic: ProviderDiagnostic, *, task_id: str | None = None) -> None:
+        public = diagnostic.public()
+        # Bind the diagnostic to the current Task without changing the
+        # provider-facing redacted payload shape.
+        bound_task_id = task_id or getattr(self, "_active_task_id", None)
+        if isinstance(bound_task_id, str):
+            public["task_id"] = bound_task_id
+        try:
+            self.store.record_runtime_diagnostic(public)
+        except Exception:
+            # Diagnostics must never replace the original provider outcome or
+            # turn a safe stop into an unbounded retry.  The in-memory trace
+            # still keeps a bounded category marker for the final report.
+            pass
+        self._record_trace_event(
+            {
+                "phase": diagnostic.phase,
+                "cycle": diagnostic.cycle,
+                "status": "provider_failure",
+                "provider": diagnostic.provider,
+                "error": diagnostic.category,
+                "duration_ms": None,
+            }
+        )
+
+    def _launch_phase_with_retry(self, context: AgentContext, lease_token: str) -> AgentOutput:
+        """Launch one phase with exactly one bounded retry for transient errors."""
+        retry_context: dict[str, Any] | None = None
+        for attempt in range(self.provider_retry_limit + 1):
+            launch_context = replace(context, retry_context=retry_context)
+            try:
+                output = self._launch_phase(launch_context, lease_token)
+                if attempt:
+                    output = AgentOutput(
+                        output.summary,
+                        output.outputs,
+                        output.decision,
+                        {**output.metadata, "provider_retries": attempt, "retry_context": retry_context},
+                    )
+                return output
+            except ProviderFailureError as exc:
+                diagnostic = exc.diagnostic.with_context(
+                    phase=context.phase,
+                    cycle=context.cycle,
+                    provider=exc.diagnostic.provider or "provider",
+                )
+                self._record_provider_diagnostic(diagnostic, task_id=context.task_id)
+                if not exc.retryable or attempt >= self.provider_retry_limit:
+                    raise ProviderFailureError(diagnostic, str(exc)) from exc
+                self._provider_retry_count += 1
+                retry_context = {
+                    "attempt": attempt + 1,
+                    "max_attempts": self.provider_retry_limit + 1,
+                    "failure": diagnostic.public(),
+                    "scope": "active_artifacts_and_current_acceptance_criteria",
+                }
+        raise AssertionError("provider retry loop exhausted unexpectedly")
 
     def _launch_phase(self, context: AgentContext, lease_token: str) -> AgentOutput:
         """Launch a phase and durably observe each root cross-reviewer."""
@@ -1267,6 +1789,82 @@ class AutonomousEngine:
             parent_span_id=_stable_span_id(f"loop:{state.get('loop_id', 'root')}"),
         )
 
+    @staticmethod
+    def _validation_environment_question(context: AgentContext, refs: list[str]) -> dict[str, Any]:
+        return {
+            "question": "検証環境または安全境界を確認してから、Reviewを再開しますか？",
+            "why_now": (
+                "検証をコード不備と断定できない失敗として分類しました。"
+                "依存関係、cwd、timeout、side-effect policy、または書き込み範囲を確認してください。"
+            ),
+            "options": [
+                {"option_id": "resume", "label": "環境を直して再開", "impact": "同じReview境界から検証を再実行します。"},
+                {"option_id": "replan", "label": "前提を見直して再計画", "impact": "検証条件を含めて新しいPlanを作成します。"},
+                {"option_id": "stop", "label": "停止", "impact": "実装と安全診断を確認して手動対応します。"},
+            ],
+            "recommended_option_id": "resume",
+            "free_text_allowed": False,
+            "blocking_scope": "root_task",
+            "blocked_refs": refs,
+            "affected_loop_ids": [context.loop_id],
+            "resume_target": {
+                "resume_phase": "review",
+                "resume_transition": "answer_received",
+                "blocked_action_ref": None,
+                "blocked_artifact_ref": None,
+            },
+            "approval_request_ref": None,
+        }
+
+    def _set_review_diagnostics(self, values: dict[str, Any], context: AgentContext, classification: str) -> None:
+        if classification not in REVIEW_CLASSIFICATIONS:
+            classification = "provider_gap"
+        values["review_classification"] = classification
+        implement_outputs: Mapping[str, Any] = {}
+        implement_artifact = context.active_artifacts.get("active_implement_ref")
+        if isinstance(implement_artifact, Mapping) and isinstance(implement_artifact.get("outputs"), Mapping):
+            implement_outputs = implement_artifact["outputs"]
+        managed_refs = implement_outputs.get("managed_action_refs", [])
+        changed_artifacts = implement_outputs.get("changed_artifacts", [])
+        has_effects = bool(
+            isinstance(managed_refs, list) and managed_refs
+        ) or bool(isinstance(changed_artifacts, list) and changed_artifacts)
+        failures = values.get("validation_failures", {})
+        categories = [
+            result.get("failure_category")
+            for result in values.get("validation_evidence", [])
+            if isinstance(result, Mapping) and isinstance(result.get("failure_category"), str)
+        ]
+        if isinstance(failures, Mapping):
+            categories.extend(
+                str(item.get("category"))
+                for item in failures.values()
+                if isinstance(item, Mapping) and item.get("category")
+            )
+        blocking = values.get("blocking_issues", [])
+        normalized_blocking = [self._normalise_progress_text(item) for item in blocking] if isinstance(blocking, list) else []
+        signature = digest_json(
+            {
+                "classification": classification,
+                "categories": sorted(set(categories)),
+                "blocking_issues": normalized_blocking,
+                "finding_categories": sorted(
+                    str(item.get("category"))
+                    for item in values.get("findings", [])
+                    if isinstance(item, Mapping) and item.get("category")
+                ),
+            }
+        )
+        values["progress"] = {
+            "failure_signature": signature,
+            "classification": classification,
+            "has_effects": has_effects,
+            "managed_action_count": len(managed_refs) if isinstance(managed_refs, list) else 0,
+            "changed_artifact_count": len(changed_artifacts) if isinstance(changed_artifacts, list) else 0,
+            "failure_categories": sorted(set(categories)),
+            "no_progress_candidate": not has_effects,
+        }
+
     def _materialize_output(self, context: AgentContext, output: AgentOutput, revision: int, lease_token: str) -> tuple[dict[str, Any], str | None]:
         values = dict(output.outputs)
         values["agent_execution"] = output.metadata
@@ -1283,7 +1881,23 @@ class AutonomousEngine:
             findings, finding_errors = _normalize_findings(values.get("findings"), context.reviewer_id or "single")
             values["findings"] = findings
             if finding_errors:
+                values["finding_schema_errors"] = _finding_schema_errors(finding_errors)
                 values.setdefault("blocking_issues", []).extend(finding_errors)
+                self._record_provider_diagnostic(
+                    make_provider_diagnostic(
+                        "invalid_schema",
+                        phase=context.phase,
+                        cycle=context.cycle,
+                        provider=output.metadata.get("provider") if isinstance(output.metadata.get("provider"), str) else "review-provider",
+                        error_path="$.outputs.findings",
+                        expected="typed finding objects",
+                        actual=values.get("findings"),
+                        retryable=False,
+                        message="review finding schema is invalid",
+                        details={"finding_schema_errors": _finding_schema_errors(finding_errors)},
+                    ),
+                    task_id=context.task_id,
+                )
                 review_decision = "needs_plan"
             for finding in findings:
                 if _finding_is_blocking(finding):
@@ -1301,6 +1915,10 @@ class AutonomousEngine:
         if context.phase == "plan":
             values.pop("action_proposals", None)
             values.setdefault("no_managed_effects", True)
+            values["plan_granularity"] = _plan_granularity(
+                context,
+                {**values, "prior_planned_files": self._prior_planned_files(context.task_id)},
+            )
             quality = {
                 "phase": context.phase,
                 "cycle": context.cycle,
@@ -1323,6 +1941,31 @@ class AutonomousEngine:
                 try:
                     executed.append(self._execute_proposal(context, item, revision, lease_token))
                 except Exception as exc:
+                    if isinstance(exc, ProviderFailureError):
+                        self._record_provider_diagnostic(
+                            exc.diagnostic.with_context(
+                                phase=context.phase,
+                                cycle=context.cycle,
+                                provider=exc.diagnostic.provider or "managed-action",
+                                action_id=str(item.get("action_id")) if item.get("action_id") else None,
+                            ),
+                            task_id=context.task_id,
+                        )
+                    elif isinstance(exc, ConflictError):
+                        self._record_provider_diagnostic(
+                            make_provider_diagnostic(
+                                "write_proposal_conflict",
+                                phase=context.phase,
+                                cycle=context.cycle,
+                                provider="managed-action",
+                                action_id=str(item.get("action_id")) if item.get("action_id") else None,
+                                expected="one immutable action descriptor per action_id",
+                                actual=exc,
+                                retryable=False,
+                                message="managed action proposal conflicts with durable action evidence",
+                            ),
+                            task_id=context.task_id,
+                        )
                     failures.append({"action_id": str(item.get("action_id", "unknown")), "error": f"{type(exc).__name__}: {exc}"})
             failed = [item for item in executed if item.returncode != 0]
             values["managed_action_refs"] = [item.action_id for item in executed if item.returncode == 0]
@@ -1355,8 +1998,9 @@ class AutonomousEngine:
             if output.metadata.get("provider_failure"):
                 values["managed_action_refs"] = []
                 values["validation_evidence"] = []
-                values["acceptance_criteria"] = [dict(item) for item in context.definition["acceptance_criteria"]]
+                values["acceptance_criteria"] = [{**dict(item), "status": "unverified", "evidence_refs": []} for item in context.definition["acceptance_criteria"]]
                 values.setdefault("blocking_issues", []).append("review provider failed before validation")
+                self._set_review_diagnostics(values, context, "provider_gap")
                 quality = {"phase": context.phase, "cycle": context.cycle, "loop_id": context.loop_id, "substantive": False, "evidence_count": 0, "reason": "review_provider_failure"}
                 values["phase_quality"] = quality
                 self._phase_quality.append(quality)
@@ -1367,6 +2011,7 @@ class AutonomousEngine:
                 values["managed_action_refs"] = []
                 values["validation_evidence"] = []
                 values.setdefault("blocking_issues", [])
+                self._set_review_diagnostics(values, context, "human_required")
                 quality = {"phase": context.phase, "cycle": context.cycle, "loop_id": context.loop_id, "substantive": False, "evidence_count": 0, "reason": "review_waiting_for_human"}
                 values["phase_quality"] = quality
                 self._phase_quality.append(quality)
@@ -1374,8 +2019,10 @@ class AutonomousEngine:
             if review_decision == "needs_plan":
                 values["managed_action_refs"] = []
                 values["validation_evidence"] = []
-                values["acceptance_criteria"] = [dict(item) for item in context.definition["acceptance_criteria"]]
+                values["acceptance_criteria"] = [{**dict(item), "status": "unverified", "evidence_refs": []} for item in context.definition["acceptance_criteria"]]
                 values.setdefault("blocking_issues", []).append("review requested a re-plan without executable validation")
+                classification = "schema_gap" if finding_errors else "code_gap"
+                self._set_review_diagnostics(values, context, classification)
                 quality = {"phase": context.phase, "cycle": context.cycle, "loop_id": context.loop_id, "substantive": False, "evidence_count": 0, "reason": "review_returned_no_validation_proposals"}
                 values["phase_quality"] = quality
                 self._phase_quality.append(quality)
@@ -1383,19 +2030,152 @@ class AutonomousEngine:
             if output.metadata.get("provider") == "cross-review":
                 values["managed_action_refs"] = []
                 values["validation_evidence"] = []
-                values["acceptance_criteria"] = [dict(item) for item in context.definition["acceptance_criteria"]]
+                values["acceptance_criteria"] = [{**dict(item), "status": "unverified", "evidence_refs": []} for item in context.definition["acceptance_criteria"]]
                 values.setdefault("blocking_issues", []).append("cross-review produced no executable validation proposals")
+                cross_review = values.get("cross_review")
+                reviewer_records = cross_review.get("reviewers", []) if isinstance(cross_review, Mapping) else []
+                failed_categories = {
+                    str(item.get("error"))
+                    for item in reviewer_records
+                    if isinstance(item, Mapping) and isinstance(item.get("error"), str)
+                }
+                if any(category in {"validation_environment_failure", "timeout", "unsafe_path"} for category in failed_categories):
+                    cross_classification = "validation_environment_gap"
+                elif failed_categories or output.metadata.get("fallback_used"):
+                    cross_classification = "provider_gap"
+                else:
+                    cross_classification = "schema_gap"
+                self._set_review_diagnostics(values, context, cross_classification)
+                if cross_classification == "validation_environment_gap":
+                    values["human_question"] = self._validation_environment_question(context, [])
+                    return values, "needs_human_input"
                 quality = {"phase": context.phase, "cycle": context.cycle, "loop_id": context.loop_id, "substantive": False, "evidence_count": 0, "reason": "cross_review_returned_no_validation_proposals"}
                 values["phase_quality"] = quality
                 self._phase_quality.append(quality)
                 return values, review_decision or "needs_plan"
-            raise ValidationError("review agent must provide managed validation_proposals")
+            raise _provider_error("invalid_managed_action", phase=context.phase, cycle=context.cycle, error_path="$.outputs.validation_proposals", expected="array of validation proposal objects", actual=None, message="review agent must provide managed validation_proposals")
+        # Validate the complete Review proposal batch before executing any
+        # process. A malformed second proposal must not leave a partially
+        # validated batch behind as durable evidence.
+        for index, item in enumerate(proposals):
+            raw_action_id = item.get("action_id")
+            if not isinstance(raw_action_id, str) or not raw_action_id.strip():
+                raise _provider_error(
+                    "invalid_managed_action",
+                    phase=context.phase,
+                    cycle=context.cycle,
+                    error_path=f"$.outputs.validation_proposals[{index}].action_id",
+                    expected="safe nonempty action_id",
+                    actual=raw_action_id,
+                    message="validation proposal requires action_id before execution",
+                )
+            try:
+                _safe_id(raw_action_id, f"validation_proposals[{index}].action_id")
+            except ValidationError as exc:
+                raise _provider_error(
+                    "invalid_managed_action",
+                    phase=context.phase,
+                    cycle=context.cycle,
+                    action_id=None,
+                    error_path=f"$.outputs.validation_proposals[{index}].action_id",
+                    expected="safe nonempty action_id",
+                    actual=raw_action_id,
+                    message=str(exc),
+                ) from exc
+            criterion_id = item.get("criterion_id")
+            if not isinstance(criterion_id, str) or not criterion_id.strip():
+                raise _provider_error(
+                    "invalid_managed_action",
+                    phase=context.phase,
+                    cycle=context.cycle,
+                    action_id=raw_action_id,
+                    error_path=f"$.outputs.validation_proposals[{index}].criterion_id",
+                    expected="nonempty acceptance criterion ID",
+                    actual=criterion_id,
+                    message="validation proposal requires criterion_id before execution",
+                )
+            if item.get("kind") != "process.run":
+                raise _provider_error(
+                    "invalid_managed_action",
+                    phase=context.phase,
+                    cycle=context.cycle,
+                    action_id=raw_action_id,
+                    error_path=f"$.outputs.validation_proposals[{index}].kind",
+                    expected="process.run",
+                    actual=item.get("kind"),
+                    message="review validation proposals may only run process.run",
+                )
+            raw_targets = item.get("targets")
+            if raw_targets is None and item.get("target") is not None:
+                raw_targets = [item["target"]]
+            if not isinstance(raw_targets, list) or not raw_targets or any(not isinstance(target, str) or not target for target in raw_targets):
+                raise _provider_error(
+                    "invalid_managed_action",
+                    phase=context.phase,
+                    cycle=context.cycle,
+                    action_id=raw_action_id,
+                    error_path=f"$.outputs.validation_proposals[{index}].targets",
+                    expected="nonempty string array",
+                    actual=raw_targets,
+                    message="validation proposal requires nonempty targets",
+                )
+            command = item.get("command")
+            if not isinstance(command, list) or not command or any(not isinstance(part, str) or not part for part in command):
+                raise _provider_error(
+                    "invalid_managed_action",
+                    phase=context.phase,
+                    cycle=context.cycle,
+                    action_id=raw_action_id,
+                    error_path=f"$.outputs.validation_proposals[{index}].command",
+                    expected="nonempty string array",
+                    actual=command,
+                    message="validation proposal requires a nonempty process command",
+                )
+            if "validation" in item:
+                try:
+                    ValidationSpec.from_mapping(item.get("validation"), label=f"validation_proposals[{index}].validation")
+                except ValidationError as exc:
+                    raise _provider_error(
+                        "invalid_managed_action",
+                        phase=context.phase,
+                        cycle=context.cycle,
+                        action_id=raw_action_id,
+                        error_path=f"$.outputs.validation_proposals[{index}].validation",
+                        expected="typed disposable validation policy",
+                        actual=item.get("validation"),
+                        message=str(exc),
+                    ) from exc
         executed: list[_ProposalResult] = []
         proposal_failures: dict[str, str] = {}
         for item in proposals:
             try:
                 executed.append(self._execute_proposal(context, item, revision, lease_token))
             except Exception as exc:
+                if isinstance(exc, ProviderFailureError):
+                    self._record_provider_diagnostic(
+                        exc.diagnostic.with_context(
+                            phase=context.phase,
+                            cycle=context.cycle,
+                            provider=exc.diagnostic.provider or "managed-validation",
+                            action_id=str(item.get("action_id")) if item.get("action_id") else None,
+                        ),
+                        task_id=context.task_id,
+                    )
+                elif isinstance(exc, ConflictError):
+                    self._record_provider_diagnostic(
+                        make_provider_diagnostic(
+                            "write_proposal_conflict",
+                            phase=context.phase,
+                            cycle=context.cycle,
+                            provider="managed-validation",
+                            action_id=str(item.get("action_id")) if item.get("action_id") else None,
+                            expected="one immutable action descriptor per action_id",
+                            actual=exc,
+                            retryable=False,
+                            message="validation proposal conflicts with durable action evidence",
+                        ),
+                        task_id=context.task_id,
+                    )
                 proposal_failures[str(item.get("action_id", "unknown"))] = f"{type(exc).__name__}: {exc}"
                 executed.append(_ProposalResult(str(item.get("action_id", "unknown")), 74, None, None))
         evidence: list[dict[str, Any]] = []
@@ -1404,12 +2184,57 @@ class AutonomousEngine:
             if not isinstance(criterion_id, str) or not criterion_id:
                 raise ValidationError("validation proposal requires criterion_id")
             evidence_ref = result.evidence_ref or f"engine://validation-failure/{context.cycle}/{result.action_id}"
-            evidence.append({"criterion_id": criterion_id, "kind": item.get("kind", "managed_validation"), "ref": evidence_ref, "outcome": "passed" if result.returncode == 0 else "failed"})
+            evidence.append({"criterion_id": criterion_id, "kind": item.get("kind", "managed_validation"), "ref": evidence_ref, "outcome": "passed" if result.returncode == 0 else "failed", "failure_category": result.failure_category, "duration_ms": result.duration_ms})
         values["managed_action_refs"] = [item.action_id for item in executed if item.returncode == 0]
         values["validation_evidence"] = evidence
         values.setdefault("acceptance_criteria", [dict(item) for item in context.definition["acceptance_criteria"]])
         values.setdefault("blocking_issues", [])
         decision = review_decision or "needs_plan"
+        criterion_ids = {
+            item.get("criterion_id")
+            for item in values["acceptance_criteria"]
+            if isinstance(item, Mapping) and isinstance(item.get("criterion_id"), str)
+        }
+        unknown_criterion_ids = sorted(
+            {item["criterion_id"] for item in evidence if item["criterion_id"] not in criterion_ids}
+        )
+        if unknown_criterion_ids:
+            values["blocking_issues"] = [
+                *values.get("blocking_issues", []),
+                *[f"validation evidence references unknown acceptance criterion: {item}" for item in unknown_criterion_ids],
+            ]
+            values["validation_schema_errors"] = [
+                {"path": "$.outputs.validation_proposals[].criterion_id", "message": f"unknown acceptance criterion: {item}"}
+                for item in unknown_criterion_ids
+            ]
+            decision = "needs_plan"
+        unverified_criteria: list[str] = []
+        for criterion in values["acceptance_criteria"]:
+            if not isinstance(criterion, dict):
+                continue
+            criterion_id = criterion.get("criterion_id")
+            matching = [item for item in evidence if item["criterion_id"] == criterion_id]
+            passed_refs = [item["ref"] for item in matching if item["outcome"] == "passed"]
+            failed_refs = [item["ref"] for item in matching if item["outcome"] == "failed"]
+            if passed_refs:
+                criterion["status"] = "passed"
+                criterion["evidence_refs"] = passed_refs
+            elif failed_refs:
+                criterion["status"] = "failed"
+                criterion["evidence_refs"] = failed_refs
+            else:
+                criterion["status"] = "unverified"
+                criterion["evidence_refs"] = []
+                if isinstance(criterion_id, str):
+                    unverified_criteria.append(criterion_id)
+        if unverified_criteria:
+            values["unverified_criteria"] = unverified_criteria
+            if decision == "completed":
+                decision = "needs_plan"
+                values["blocking_issues"] = [
+                    *values.get("blocking_issues", []),
+                    *[f"acceptance criterion was not verified: {item}" for item in unverified_criteria],
+                ]
         if decision == "completed" and self._implement_has_no_effects(context):
             decision = "needs_plan"
             values.setdefault("blocking_issues", []).append(
@@ -1421,12 +2246,39 @@ class AutonomousEngine:
         if proposal_failures:
             values["validation_failures"] = proposal_failures
             values["blocking_issues"] = [*values.get("blocking_issues", []), *[f"validation proposal failed: {key}" for key in proposal_failures]]
-        if decision == "completed":
-            for item in values["acceptance_criteria"]:
-                if isinstance(item, dict):
-                    refs = [entry["ref"] for entry in evidence if entry["criterion_id"] == item.get("criterion_id") and entry["outcome"] == "passed"]
-                    item.setdefault("status", "passed")
-                    item.setdefault("evidence_refs", refs)
+        if any(item.returncode != 0 for item in executed):
+            categories = {item.failure_category for item in executed if item.failure_category}
+            if "validation_environment_failure" in categories:
+                classification = "validation_environment_gap"
+            elif "safety_gap" in categories:
+                classification = "safety_gap"
+            elif "invalid_managed_action" in categories:
+                classification = "schema_gap"
+            else:
+                classification = "test_gap"
+        elif proposal_failures:
+            classification = "provider_gap" if any("ProviderFailureError" in error for error in proposal_failures.values()) else "schema_gap"
+        elif finding_errors or unknown_criterion_ids:
+            classification = "schema_gap"
+        elif unverified_criteria:
+            classification = "test_gap"
+        elif any(_finding_is_blocking(item) for item in values.get("findings", []) if isinstance(item, Mapping)):
+            classification = "code_gap"
+        else:
+            classification = "completed" if decision == "completed" else "code_gap"
+        environment_or_safety_failure = classification in {"validation_environment_gap", "safety_gap"}
+        if environment_or_safety_failure:
+            # A missing dependency, timeout, or scope escape is not evidence
+            # that the implementation is wrong.  Stop at the Human boundary
+            # instead of blindly creating another Plan that repeats the same
+            # environment failure.  The redacted category and evidence refs
+            # remain in this Review artifact for diagnosis/resume.
+            decision = "needs_human_input"
+            values["human_question"] = self._validation_environment_question(
+                context,
+                [str(item.get("ref")) for item in evidence if isinstance(item, Mapping) and isinstance(item.get("ref"), str)],
+            )
+        self._set_review_diagnostics(values, context, classification)
         quality = {
             "phase": context.phase,
             "cycle": context.cycle,
@@ -1478,23 +2330,73 @@ class AutonomousEngine:
         execution = outputs.get("agent_execution")
         return isinstance(execution, Mapping) and bool(execution.get("provider_failure"))
 
+    def _validation_policy_for_command(self, command: tuple[str, ...]) -> ValidationCommandPolicy | None:
+        matches = [policy for policy in self.validation_policies if policy.matches(command)]
+        if not matches:
+            return None
+        # Prefer the most specific prefix.  PolicyGateway independently checks
+        # the same prefix, so this cannot turn an unallowlisted command into a
+        # permitted effect.
+        return max(matches, key=lambda policy: len(policy.command))
+
     def _execute_proposal(self, context: AgentContext, proposal: dict[str, Any], _revision: int, lease_token: str) -> _ProposalResult:
         if self.resource_budget is not None:
             self.resource_budget.record_tool_call()
         kind = proposal.get("kind")
         if kind not in {"filesystem.write", "process.run", "git.local"}:
-            raise UnsupportedActionError(f"agent proposal kind is unsupported: {kind}")
+            raise _provider_error(
+                "invalid_managed_action",
+                phase=context.phase,
+                cycle=context.cycle,
+                action_id=str(proposal.get("action_id")) if proposal.get("action_id") else None,
+                error_path="$.outputs.action_proposals[].kind",
+                expected="filesystem.write, process.run, or git.local",
+                actual=kind,
+                message=f"agent proposal kind is unsupported: {kind}",
+            )
         if context.phase == "review" and kind != "process.run":
-            raise UnsupportedActionError("review validation may only run an allowlisted process; filesystem and Git writes are forbidden")
+            raise _provider_error(
+                "invalid_managed_action",
+                phase=context.phase,
+                cycle=context.cycle,
+                error_path="$.outputs.validation_proposals[].kind",
+                expected="process.run",
+                actual=kind,
+                message="review validation may only run an allowlisted process; filesystem and Git writes are forbidden",
+            )
         repository_root = context.repository_root
         if not isinstance(repository_root, str) or not repository_root:
-            raise ValidationError("managed agent action requires a target repository")
-        action_id = _safe_id(str(proposal.get("action_id") or f"agent-action-{uuid.uuid4().hex}"), "action_id")
+            raise _provider_error("invalid_managed_action", phase=context.phase, cycle=context.cycle, error_path="$.repository_root", expected="nonempty repository path", actual=repository_root, message="managed agent action requires a target repository")
+        raw_action_id = proposal.get("action_id")
+        if not isinstance(raw_action_id, str) or not raw_action_id.strip():
+            raise _provider_error(
+                "invalid_managed_action",
+                phase=context.phase,
+                cycle=context.cycle,
+                error_path="$.outputs.action_proposals[].action_id",
+                expected="safe nonempty action_id",
+                actual=raw_action_id,
+                message="managed action proposal requires a nonempty action_id for durable idempotency",
+            )
+        action_id = _safe_id(raw_action_id, "action_id")
+        if context.phase == "review":
+            criterion_id = proposal.get("criterion_id")
+            if not isinstance(criterion_id, str) or not criterion_id.strip():
+                raise _provider_error(
+                    "invalid_managed_action",
+                    phase=context.phase,
+                    cycle=context.cycle,
+                    action_id=action_id,
+                    error_path="$.outputs.validation_proposals[].criterion_id",
+                    expected="nonempty acceptance criterion ID",
+                    actual=criterion_id,
+                    message="validation proposal requires criterion_id",
+                )
         targets = proposal.get("targets")
         if targets is None and proposal.get("target") is not None:
             targets = [proposal["target"]]
         if not isinstance(targets, list) or not targets or any(not isinstance(item, str) or not item for item in targets):
-            raise ValidationError("agent proposal targets must be a nonempty string list")
+            raise _provider_error("invalid_managed_action", phase=context.phase, cycle=context.cycle, action_id=action_id, error_path="$.outputs.action_proposals[].targets", expected="nonempty string array", actual=targets, message="agent proposal targets must be a nonempty string list")
         # Every managed action advances Task revision while retaining the
         # phase lease.  Re-read it for each proposal so a phase agent may
         # safely return more than one sequential action without reusing a
@@ -1502,14 +2404,54 @@ class AutonomousEngine:
         current_revision = self.store.read_task(context.task_id)[1]["revision"]
         command = proposal.get("command")
         if command is not None and (not isinstance(command, list) or any(not isinstance(item, str) for item in command)):
-            raise ValidationError("agent proposal command must be a string list")
+            raise _provider_error("invalid_managed_action", phase=context.phase, cycle=context.cycle, action_id=action_id, error_path="$.outputs.validation_proposals[].command", expected="string array", actual=command, message="agent proposal command must be a string list")
+        command_tuple = tuple(command) if command is not None else None
+        validation_policy = self._validation_policy_for_command(command_tuple or ()) if kind == "process.run" else None
+        if kind == "process.run" and validation_policy is None:
+            configured = [list(policy.command) for policy in self.validation_policies]
+            raise _provider_error(
+                "invalid_managed_action",
+                phase=context.phase,
+                cycle=context.cycle,
+                action_id=action_id,
+                error_path="$.outputs.validation_proposals[].command",
+                expected="command matching a configured validation allowlist prefix",
+                actual=command_tuple,
+                message=f"validation command is not allowlisted; add a matching prefix to validation.allowed_processes (configured={len(configured)})",
+                details={"configured_prefix_count": len(configured)},
+            )
+        raw_validation = proposal.get("validation")
+        try:
+            requested_spec = ValidationSpec.from_mapping(raw_validation, label="agent proposal validation") if raw_validation is not None else None
+            if validation_policy is not None:
+                # The allowlist entry is Human/operator policy. An agent may
+                # request the same public settings for explanation, but may
+                # not widen cwd, environment, timeout, output, or side-effect
+                # scope inside its own proposal.
+                if requested_spec is not None and requested_spec.public() != validation_policy.spec.public():
+                    raise ValidationError("agent validation settings must match the configured validation policy")
+                validation_spec = validation_policy.spec
+            else:
+                validation_spec = requested_spec or ValidationSpec()
+        except ValidationError as exc:
+            raise _provider_error(
+                "invalid_managed_action",
+                phase=context.phase,
+                cycle=context.cycle,
+                action_id=action_id,
+                error_path="$.outputs.validation_proposals[].validation",
+                expected="typed disposable validation policy",
+                actual=raw_validation,
+                message=str(exc),
+            ) from exc
+        validation_public = validation_spec.public() if kind == "process.run" else None
         action = ActionDescriptor(
             action_id=action_id,
             task_id=context.task_id,
             kind=kind,
             repository_root=repository_root,
             targets=tuple(targets),
-            command=tuple(command) if command is not None else None,
+            command=command_tuple,
             loop_id=context.loop_id,
             expected_state_revision=int(current_revision),
             request_id=self.store.request_id,
@@ -1520,6 +2462,7 @@ class AutonomousEngine:
             resource_ids=tuple(item for item in proposal.get("resource_ids", []) if isinstance(item, str)),
             reservation_ids=tuple(item for item in proposal.get("reservation_ids", []) if isinstance(item, str)),
             lease_token=lease_token if context.loop_id != "root" else None,
+            validation=validation_public,
         )
         reused = self._reuse_existing_action(action, targets[0])
         if reused is not None:
@@ -1527,18 +2470,78 @@ class AutonomousEngine:
         if kind == "filesystem.write":
             content = proposal.get("content")
             if not isinstance(content, str):
-                raise ValidationError("filesystem.write proposal requires string content")
+                raise _provider_error("invalid_managed_action", phase=context.phase, cycle=context.cycle, action_id=action_id, error_path="$.outputs.action_proposals[].content", expected="string", actual=content, message="filesystem.write proposal requires string content")
             if secret_summary({"content": content}):
                 raise ValidationError("agent write content contains a high-confidence secret")
             result = self.executor.write_text(action, content)
         elif kind == "process.run":
-            result = self.executor.run_process(action)
+            result = self.executor.run_process(action, validation=validation_spec)
         else:
             result = self.executor.run_local_git(action)
         record = read_json(self.store._path(context.task_id) / "actions" / f"{action_id}.json")
         evidence_ref = record.get("after_evidence_ref") if isinstance(record, dict) else None
         target = targets[0] if targets else None
-        return _ProposalResult(action_id, result.returncode, evidence_ref if isinstance(evidence_ref, str) else None, target)
+        failure_category: str | None = None
+        duration_ms: float | None = None
+        if isinstance(evidence_ref, str):
+            task_root = self.store._path(context.task_id).resolve()
+            evidence_path = (task_root / evidence_ref).resolve()
+            if task_root in evidence_path.parents and evidence_path.is_file():
+                evidence = read_json(evidence_path)
+                facts = evidence.get("facts") if isinstance(evidence, Mapping) else None
+                if isinstance(facts, Mapping):
+                    candidate = facts.get("failure_category")
+                    if isinstance(candidate, str):
+                        failure_category = candidate
+                    started_at = facts.get("started_at")
+                    completed_at = facts.get("completed_at")
+                    if isinstance(started_at, str) and isinstance(completed_at, str):
+                        try:
+                            duration_ms = max(0.0, (datetime.fromisoformat(completed_at) - datetime.fromisoformat(started_at)).total_seconds() * 1000)
+                        except ValueError:
+                            duration_ms = None
+        self._validation_count += 1 if kind == "process.run" else 0
+        if failure_category == "validation_environment_failure":
+            self._validation_environment_failures += 1
+            self._record_provider_diagnostic(
+                make_provider_diagnostic(
+                    "validation_environment_failure",
+                    phase=context.phase,
+                    cycle=context.cycle,
+                    provider="managed-validation",
+                    action_id=action_id,
+                    error_path="$.postflight.facts",
+                    expected="validation command executes in the disposable workspace",
+                    actual=result.returncode,
+                    stderr=result.stderr,
+                    retryable=False,
+                    message="validation could not execute in its configured environment",
+                    details={"validation_cwd": validation_spec.cwd, "duration_ms": duration_ms},
+                ),
+                task_id=context.task_id,
+            )
+        elif failure_category == "safety_gap":
+            self._record_provider_diagnostic(
+                make_provider_diagnostic(
+                    "unsafe_path",
+                    phase=context.phase,
+                    cycle=context.cycle,
+                    provider="managed-validation",
+                    action_id=action_id,
+                    error_path="$.postflight.facts.unexpected_changed_paths",
+                    expected="only explicitly allowed disposable side effects",
+                    actual=result.returncode,
+                    stderr=result.stderr,
+                    retryable=False,
+                    message="validation changed a path outside its allowed side-effect set",
+                ),
+                task_id=context.task_id,
+            )
+        elif result.returncode != 0 and kind == "process.run":
+            self._code_failures += 1
+        if result.returncode == 0 and kind == "filesystem.write":
+            self._last_actual_change_at = result.completed_at
+        return _ProposalResult(action_id, result.returncode, evidence_ref if isinstance(evidence_ref, str) else None, target, failure_category, duration_ms)
 
     def _reuse_existing_action(self, action: ActionDescriptor, target: str | None) -> _ProposalResult | None:
         """Recover a durable action instead of replaying an uncertain effect."""
@@ -1652,8 +2655,28 @@ class AutonomousEngine:
             return trace, quality
         return list(self._execution_trace), list(self._phase_quality)
 
+    def _runtime_diagnostics(self, task_id: str) -> list[dict[str, Any]]:
+        """Read only the safe, schema-validated runtime diagnosis envelope."""
+        path = self.store._path(task_id) / "diagnostics.jsonl"
+        if not path.is_file():
+            return []
+        values: list[dict[str, Any]] = []
+        try:
+            for line in path.read_text(encoding="utf-8").splitlines():
+                if not line.strip():
+                    continue
+                value = json.loads(line)
+                self.store.schemas.validate("runtime-diagnostic", value)
+                values.append(value)
+        except (OSError, ValueError, ValidationError):
+            # A malformed operational log must not make the task state
+            # unreadable; TaskStore.diagnose remains the strict recovery path.
+            return []
+        return values
+
     def _result(self, task_id: str, state: dict[str, Any], steps: int, outcome: str) -> dict[str, Any]:
         trace, durable_quality = self._durable_diagnostics(task_id)
+        runtime_diagnostics = self._runtime_diagnostics(task_id)
         phases = [f"{item['loop_id']}/cycle-{item['cycle']}/{item['phase']}" for item in trace]
         quality_items: list[dict[str, Any]] = []
         quality_seen: set[str] = set()
@@ -1684,6 +2707,115 @@ class AutonomousEngine:
             root_causes.append("unexpected_phase_sequence")
         if not root_causes and len(trace) >= 3:
             root_causes.append("no_phase_skip_detected")
+        elapsed_ms = None
+        if self._task_started_monotonic is not None:
+            elapsed_ms = round(max(0.0, (time.monotonic() - self._task_started_monotonic) * 1000), 3)
+        if elapsed_ms is None and trace:
+            started_values = [item.get("started_at") for item in trace if isinstance(item.get("started_at"), str)]
+            finished_values = [item.get("finished_at") for item in trace if isinstance(item.get("finished_at"), str)]
+            try:
+                if started_values and finished_values:
+                    elapsed_ms = round(max(0.0, (datetime.fromisoformat(max(finished_values)) - datetime.fromisoformat(min(started_values))).total_seconds() * 1000), 3)
+            except ValueError:
+                elapsed_ms = None
+        implementation_slices = 0
+        for path in sorted(self.store._path(task_id).glob("cycles/*/02-implement-result.json")):
+            try:
+                artifact = read_json(path)
+            except Exception:
+                continue
+            outputs = artifact.get("outputs") if isinstance(artifact, Mapping) else None
+            if isinstance(outputs, Mapping) and (outputs.get("managed_action_refs") or outputs.get("changed_artifacts")):
+                implementation_slices += 1
+        current_blocker = self._current_bottleneck
+        latest_review_ref = state.get("latest_review_result_ref")
+        if isinstance(latest_review_ref, Mapping) and isinstance(latest_review_ref.get("path"), str):
+            try:
+                latest_review = read_json(self.store._path(task_id) / latest_review_ref["path"])
+                latest_outputs = latest_review.get("outputs") if isinstance(latest_review, Mapping) else None
+                if isinstance(latest_outputs, Mapping):
+                    current_blocker = str(latest_outputs.get("review_classification") or current_blocker) if latest_outputs.get("review_classification") else current_blocker
+            except Exception:
+                pass
+        cycle_timings: list[dict[str, Any]] = []
+        for cycle in sorted({int(item.get("cycle", 0)) for item in trace if isinstance(item.get("cycle"), int) and int(item.get("cycle", 0)) > 0}):
+            cycle_trace = [item for item in trace if item.get("cycle") == cycle]
+            starts = [item.get("started_at") for item in cycle_trace if isinstance(item.get("started_at"), str)]
+            finishes = [item.get("finished_at") for item in cycle_trace if isinstance(item.get("finished_at"), str)]
+            duration = round(sum(float(item.get("duration_ms", 0) or 0) for item in cycle_trace), 3)
+            cycle_timings.append({"cycle": cycle, "started_at": min(starts) if starts else None, "finished_at": max(finishes) if finishes else None, "duration_ms": duration})
+        phase_duration_ms = round(sum(float(item.get("duration_ms", 0) or 0) for item in trace), 3)
+        validation_duration_ms = 0.0
+        changed_artifacts: list[str] = []
+        managed_action_count = 0
+        category_counts: dict[str, int] = {}
+        durable_last_change_at = self._last_actual_change_at
+        for path in sorted(self.store._path(task_id).glob("cycles/*/*-result.json")):
+            try:
+                artifact = read_json(path)
+            except Exception:
+                continue
+            outputs = artifact.get("outputs") if isinstance(artifact, Mapping) else None
+            if not isinstance(outputs, Mapping):
+                continue
+            evidence = outputs.get("validation_evidence")
+            if isinstance(evidence, list):
+                validation_duration_ms += sum(float(item.get("duration_ms", 0) or 0) for item in evidence if isinstance(item, Mapping))
+                for item in evidence:
+                    category = item.get("failure_category") if isinstance(item, Mapping) else None
+                    if isinstance(category, str):
+                        category_counts[category] = category_counts.get(category, 0) + 1
+            refs = outputs.get("managed_action_refs")
+            if isinstance(refs, list):
+                managed_action_count += len(refs)
+            changed = outputs.get("changed_artifacts")
+            if isinstance(changed, list):
+                changed_artifacts.extend(item for item in changed if isinstance(item, str))
+        for action_path in sorted((self.store._path(task_id) / "actions").glob("*.json")):
+            try:
+                action_record = read_json(action_path)
+            except Exception:
+                continue
+            action_descriptor = action_record.get("action") if isinstance(action_record, Mapping) else None
+            if (
+                isinstance(action_descriptor, Mapping)
+                and action_descriptor.get("kind") == "filesystem.write"
+                and action_record.get("status") == "completed"
+                and isinstance(action_record.get("updated_at"), str)
+                and (durable_last_change_at is None or action_record["updated_at"] > durable_last_change_at)
+            ):
+                durable_last_change_at = action_record["updated_at"]
+        for diagnostic in runtime_diagnostics:
+            category = diagnostic.get("category")
+            if isinstance(category, str):
+                category_counts[category] = category_counts.get(category, 0) + 1
+        report = {
+            "task_duration_ms": elapsed_ms,
+            "task_started_at": min((item.get("started_at") for item in trace if isinstance(item.get("started_at"), str)), default=self._task_started_at),
+            "task_finished_at": max((item.get("finished_at") for item in trace if isinstance(item.get("finished_at"), str)), default=_now() if elapsed_ms is not None else None),
+            "cycles": max((int(item.get("cycle", 0) or 0) for item in trace), default=int(state.get("cycle", 1))),
+            "cycle_timings": cycle_timings,
+            "provider_duration_ms": phase_duration_ms,
+            "validation_duration_ms": round(validation_duration_ms, 3),
+            "completed_implementation_slices": implementation_slices,
+            "managed_action_count": managed_action_count,
+            "changed_artifacts": list(dict.fromkeys(changed_artifacts)),
+            "provider_retries": self._provider_retry_count,
+            "validation_environment_failures": max(self._validation_environment_failures, category_counts.get("validation_environment_failure", 0)),
+            "code_failures": max(self._code_failures, category_counts.get("test_gap", 0)),
+            "no_progress_cycles": self._no_progress_count,
+            "current_blocker": current_blocker,
+            "last_actual_change_at": durable_last_change_at,
+            "needs_plan_count": sum(1 for path in self.store._path(task_id).glob("cycles/*/03-review-result.json") if _artifact_decision(path, "needs_plan")),
+            "completion_rate": 1.0 if outcome == "completed" else round(min(1.0, implementation_slices / max(1, int(state.get("cycle", 1)) * 1.0)), 3),
+            "failure_category_counts": dict(sorted(category_counts.items())),
+        }
+        termination_summary = {
+            "outcome": outcome,
+            "reason": state.get("last_error") or current_blocker or outcome,
+            "final_error": current_blocker,
+            "remaining_work": list(state.get("blocking_reasons", [])) if isinstance(state.get("blocking_reasons"), list) else [],
+        }
         return {
             "task_id": task_id,
             "outcome": outcome,
@@ -1700,6 +2832,8 @@ class AutonomousEngine:
                 "quality_gaps": quality_gaps,
                 "root_causes": root_causes,
                 "trace": trace,
+                "report": report,
+                "termination_summary": termination_summary,
             },
         }
 
@@ -2113,5 +3247,11 @@ class ParallelExecutionEngine:
 
 def _proposal_list(value: Any, label: str) -> list[dict[str, Any]]:
     if not isinstance(value, list) or any(not isinstance(item, dict) for item in value):
-        raise ValidationError(f"{label} must be a list of objects")
+        raise _provider_error(
+            "invalid_managed_action",
+            error_path=f"$.outputs.{label}",
+            expected="array of objects",
+            actual=value,
+            message=f"{label} must be a list of objects",
+        )
     return [dict(item) for item in value]

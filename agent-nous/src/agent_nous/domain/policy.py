@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import hashlib
 import uuid
 from pathlib import Path
 from typing import Iterable
@@ -51,7 +52,10 @@ class PolicyGateway:
                 return "red", "process action has no declared in-scope resources"
             command = action.command or ()
             if not any(command[: len(prefix)] == prefix for prefix in self.allowed_processes):
-                return "red", "process command is not in the executor allowlist"
+                command_digest = hashlib.sha256("\0".join(command).encode("utf-8", errors="replace")).hexdigest()
+                configured = len(self.allowed_processes)
+                setting = "validation.allowed_processes" if configured else "validation.allowed_processes is empty"
+                return "red", f"process command is not in executor allowlist; add a matching prefix to {setting}; command_sha256={command_digest}"
             if any(part == "-c" for part in command):
                 return "red", "arbitrary process payload is not a managed operation"
             return "yellow", "allowlisted process still requires sandbox constraints"

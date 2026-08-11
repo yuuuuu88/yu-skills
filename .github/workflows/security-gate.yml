@@ -1,0 +1,127 @@
+name: Public release security gate
+
+on:
+  push:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: public-release-security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  repository-hygiene:
+    name: Security / repository hygiene
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out full history
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.12"
+      - name: Scan publishable files and reachable history
+        run: python scripts/security_scan.py
+
+  workflow-audit:
+    name: Security / workflow audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.12"
+      - name: Install zizmor
+        run: python -m pip install --disable-pip-version-check --no-input "zizmor==1.29.0"
+      - name: Audit GitHub Actions workflows
+        run: zizmor --offline .github/workflows
+
+  python-dependency-audit:
+    name: Security / Python dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: "3.12"
+      - name: Install local packages and audit tool
+        run: |
+          python -m pip install --disable-pip-version-check --no-input --upgrade pip
+          python -m pip install --disable-pip-version-check --no-input 'pip-audit==2.10.1'
+      - name: Audit agent-nous dependencies
+        run: pip-audit --strict ./agent-nous
+      - name: Audit nous-pilot dependencies
+        run: pip-audit --strict ./nous-pilot
+
+  node-dependency-audit:
+    name: Security / Node dependencies
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: skills/architecture-diagram-pptx/scripts
+    steps:
+      - name: Check out source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f
+        with:
+          node-version: "22"
+      - name: Install locked dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts --no-audit
+      - name: Audit Node dependencies
+        run: npm audit --audit-level=high
+
+  dependency-review:
+    name: Security / dependency review
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Review dependency changes
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294
+        with:
+          fail-on-severity: high
+
+  codeql:
+    name: Security / CodeQL (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [python, actions]
+    steps:
+      - name: Check out source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@85689a103d1234521562bbb736b2c4a31c9a85d5
+        with:
+          languages: ${{ matrix.language }}
+      - name: Analyze with CodeQL
+        uses: github/codeql-action/analyze@85689a103d1234521562bbb736b2c4a31c9a85d5
+        with:
+          category: "/language:${{ matrix.language }}"

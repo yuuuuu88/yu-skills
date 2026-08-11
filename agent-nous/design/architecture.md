@@ -308,6 +308,16 @@ Plan / Implement / Review の本体を変更しなくてもよい状態を目指
 - サブスキルの出力は、次工程が読める構造にする
 - file pathだけでなくschema、API contract、config、lockfile、external service、Git refをsemantic resource contractとして受け渡し、provider固有の表現へCoreを結合しない
 
+## Provider・Validation・診断境界
+
+Providerはtyped envelopeを返すだけで、Task Stateやcanonical artifactを直接編集しない。Provider failureは`ProviderDiagnostic`へ正規化し、phase / cycle / action、JSON path、actual type、redacted stderr、retryabilityをTask-local append-only diagnosticsへ保存する。raw outputやsecretは保存しない。
+
+ValidationはActionごとのdisposable workspaceで実行する。snapshot前後のtree差分を取り、pytest cache・`__pycache__`・`.pyc`・指定ログのような明示的side effectとsource変更を分離する。target repositoryへ検証workspaceをコピーし戻すことは禁止する。詳細なpolicyとpostflight factsは [Validation Sandbox Design](./validation-sandbox.md) を正とする。
+
+Reviewはfailureを`code_gap`、`test_gap`、`validation_environment_gap`、`provider_gap`、`schema_gap`、`documentation_gap`、`safety_gap`、`completed`、`human_required`に分類する。分類は`needs_plan`の理由を失わせないためのcanonical evidenceであり、環境エラーをコード不備へ暗黙変換しない。
+
+Planは固定のファイル数上限ではなく、推定出力サイズ、依存関係、acceptance criteria、関連fileのatomic change setから複雑度を評価する。複雑すぎる場合だけ依存DAG付き分割を提案し、同じfileの反復変更や大規模全体置換を診断する。
+
 ## 結論
 
 nousの安定部分は以下に限定する。

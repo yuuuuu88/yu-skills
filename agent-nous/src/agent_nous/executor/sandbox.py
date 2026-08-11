@@ -51,6 +51,7 @@ class CodexSandbox:
 {read_entries}
 "{writable_root.resolve()}" = "write"
 {write_entries}
+"{profile_home.resolve()}" = "write"
 
 [permissions.nous-managed.network]
 enabled = false
@@ -68,32 +69,56 @@ enabled = false
         timeout_seconds: float = 60,
         extra_env: dict[str, str] | None = None,
         write_roots: tuple[Path, ...] = (),
+        cwd: Path | None = None,
     ) -> subprocess.CompletedProcess[str]:
         root = writable_root.resolve()
+        working_directory = (cwd or root).resolve()
+        if working_directory != root and root not in working_directory.parents:
+            raise ValueError("sandbox cwd must remain below writable_root")
+        if not working_directory.is_dir():
+            raise ValueError("sandbox cwd must be an existing directory")
         resolved_write_roots = tuple(path.resolve() for path in write_roots)
         for write_root in resolved_write_roots:
             write_root.mkdir(parents=True, exist_ok=True)
-        profile_home = self._profile_home(root, tuple(path.resolve() for path in read_roots), resolved_write_roots)
-        command = (
-            self.codex,
-            "sandbox",
-            "-P",
-            "nous-managed",
-            "-C",
-            str(root),
-            "--",
-            *argv,
-        )
-        env = {
-            "PATH": os.environ.get("PATH", "/usr/bin:/bin"),
-            "HOME": os.environ.get("HOME", ""),
-            "CODEX_HOME": str(profile_home),
-        }
+        # A host-side read-only Codex is an explicit operator-approved escape
+        # hatch for environments where the outer Codex sandbox cannot reach
+        # the model endpoint.  The caller must still pass an inner
+        # ``codex ... --sandbox read-only`` command.  This mode intentionally
+        # does not claim the outer filesystem/network containment guarantees.
+        host_read_only = os.environ.get("NOUS_HOST_READ_ONLY_CODEX") == "1"
+        if host_read_only:
+            # ``argv`` already contains the requested executable.  The normal
+            # path prepends ``codex sandbox``; host mode deliberately bypasses
+            # that outer wrapper and must not prepend a second Codex binary.
+            command = tuple(argv)
+            env = {
+                "PATH": os.environ.get("PATH", "/usr/bin:/bin"),
+                "HOME": os.environ.get("HOME", ""),
+            }
+            if os.environ.get("CODEX_HOME"):
+                env["CODEX_HOME"] = os.environ["CODEX_HOME"]
+        else:
+            profile_home = self._profile_home(root, tuple(path.resolve() for path in read_roots), resolved_write_roots)
+            command = (
+                self.codex,
+                "sandbox",
+                "-P",
+                "nous-managed",
+                "-C",
+                str(root),
+                "--",
+                *argv,
+            )
+            env = {
+                "PATH": os.environ.get("PATH", "/usr/bin:/bin"),
+                "HOME": os.environ.get("HOME", ""),
+                "CODEX_HOME": str(profile_home),
+            }
         if extra_env:
             env.update(extra_env)
         process = subprocess.Popen(
             command,
-            cwd=root,
+            cwd=working_directory,
             env=env,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,

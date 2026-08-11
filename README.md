@@ -29,6 +29,25 @@ runtime state, local task data, review records, or generated validation output.
 Remote Git operations, deployment, paid services, and live provider access are
 not enabled by default in the included tools.
 
+## Public release gate
+
+Changes may be pushed directly to `main` only after the local public-release
+gate passes. The root GitHub Actions security gate then performs a secondary
+check of repository hygiene, reachable Git history, workflow configuration,
+dependencies, and CodeQL. A workflow triggered by a direct push can report a
+problem, but cannot make an already-pushed public commit private.
+
+For local enforcement, install the repository hook once:
+
+```bash
+python3 scripts/bootstrap_security_tools.py
+python3 scripts/install_git_hooks.py
+```
+
+After that, `git push` runs the local public-release gate before contacting the
+remote. The hook can be bypassed technically, so do not use
+`git push --no-verify`; the GitHub workflow remains a secondary audit.
+
 ## License
 
 Original work in this repository is released under the [MIT License](./LICENSE).
